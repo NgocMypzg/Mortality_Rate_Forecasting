@@ -6,4 +6,3 @@ plotly
 prophet
 statsmodels
 scikit-learn
-gdown
