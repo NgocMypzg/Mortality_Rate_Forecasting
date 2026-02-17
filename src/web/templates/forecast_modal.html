@@ -1,0 +1,242 @@
+<!doctype html>
+
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Dự báo tỷ lệ tử vong - Chọn năm dự báo</title>
+    <!-- Tailwind CSS v3 CDN -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <!-- Google Fonts: Crimson Pro -->
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700;800&amp;display=swap"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style data-purpose="typography">
+      body {
+        font-family: "Crimson Pro", serif;
+      }
+      .fantasy-title {
+        text-shadow: 0 0 10px rgba(216, 162, 74, 0.5);
+        letter-spacing: 0.05em;
+      }
+    </style>
+    <style data-purpose="layout-styling">
+      /* Simulated background to show modal context */
+      .map-background-sim {
+        background: radial-gradient(circle at center, #1c3f4f 0%, #07121f 100%);
+        filter: blur(4px);
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+      }
+
+      /* Modal Styling */
+      .fantasy-modal-container {
+        background: linear-gradient(145deg, #1c2c3a, #0a141f);
+        border: 3px ridge #d8a24a;
+        box-shadow:
+          0 20px 50px rgba(0, 0, 0, 0.8),
+          0 0 15px rgba(216, 162, 74, 0.3);
+        position: relative;
+      }
+
+      .fantasy-modal-container::before {
+        content: "";
+        position: absolute;
+        top: 6px;
+        left: 6px;
+        right: 6px;
+        bottom: 6px;
+        border: 1px dashed rgba(216, 162, 74, 0.3);
+        border-radius: 36px 6px 36px 6px;
+        pointer-events: none;
+      }
+
+      /* Custom Slider Styling */
+      input[type="range"] {
+        -webkit-appearance: none;
+        background: transparent;
+      }
+      input[type="range"]::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 8px;
+        cursor: pointer;
+        background: #2b3e4e;
+        border-radius: 4px;
+        border: 1px solid #3e5a6f;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        height: 24px;
+        width: 24px;
+        border-radius: 50%;
+        background: #d8a24a;
+        cursor: pointer;
+        -webkit-appearance: none;
+        margin-top: -9px;
+        box-shadow: 0 0 10px #d8a24a;
+        border: 2px solid #f0c674;
+      }
+
+      /* Buttons */
+      .btn-gold {
+        background: linear-gradient(145deg, #d8a24a, #b37b3a);
+        color: #07121f;
+        transition: all 0.3s ease;
+      }
+      .btn-gold:hover {
+        box-shadow: 0 0 20px rgba(216, 162, 74, 0.6);
+        transform: translateY(-1px);
+      }
+      .btn-outline-fantasy {
+        border: 1px solid #d8a24a;
+        color: #d8a24a;
+        background: transparent;
+        transition: all 0.3s ease;
+      }
+      .btn-outline-fantasy:hover {
+        background: rgba(216, 162, 74, 0.1);
+        box-shadow: 0 0 10px rgba(216, 162, 74, 0.2);
+      }
+    </style>
+  </head>
+  <body class="bg-[#0a141f] min-h-screen flex items-center justify-center p-4">
+    <!-- BEGIN: BackgroundSimulation -->
+    <!-- This is just to provide context for the modal as it would appear over the map -->
+    <div class="map-background-sim" data-purpose="ui-context"></div>
+    <!-- END: BackgroundSimulation -->
+    <!-- BEGIN: ForecastYearSelectionModal -->
+    <div
+      class="fantasy-modal-container w-full max-w-md p-8 rounded-[40px_10px_40px_10px] z-50"
+      data-purpose="forecast-year-selection-popup"
+      id="fys_modal"
+    >
+      <div class="text-center mb-8">
+        <h2
+          class="ds-h4 text-[#f0c674] text-3xl font-bold fantasy-title uppercase tracking-widest"
+          id="fys_txt_title"
+        >
+          Chọn năm dự báo
+        </h2>
+        <div
+          class="w-24 h-0.5 bg-gradient-to-r from-transparent via-[#d8a24a] to-transparent mx-auto mt-2"
+        ></div>
+      </div>
+      <!-- BEGIN: YearSelectionSliderSection -->
+      <div class="mb-10 px-4">
+        <div class="flex justify-between items-end mb-4">
+          <label
+            class="text-[#efe6d8] text-lg font-medium"
+            for="fys_slider_years"
+            >Số năm dự báo:</label
+          >
+          <span
+            class="text-[#f0c674] text-2xl font-bold"
+            id="fys_txt_selected_year"
+          >
+            2028
+            <span class="text-sm font-normal text-[#b6ab9a] ml-1"
+              >(+4 năm)</span
+            >
+          </span>
+        </div>
+        <input
+          class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+          id="fys_slider_years"
+          max="5"
+          min="1"
+          step="1"
+          type="range"
+          value="4"
+        />
+        <div
+          class="flex justify-between mt-2 text-[#6f7c8a] text-sm font-semibold px-1"
+        >
+          <span>1</span>
+          <span>2</span>
+          <span>3</span>
+          <span>4</span>
+          <span>5</span>
+        </div>
+      </div>
+      <!-- END: YearSelectionSliderSection -->
+      <!-- BEGIN: InfoNoteSection -->
+      <div
+        class="bg-[#0f1b24] border-l-4 border-[#d8a24a] p-4 mb-8 rounded-r-lg"
+        data-purpose="methodology-note"
+      >
+        <p
+          class="text-[#b6ab9a] text-sm italic flex items-start gap-3"
+          id="fys_txt_note"
+        >
+          <i class="fas fa-scroll mt-1 text-[#d8a24a]"></i>
+          <span
+            >Dự báo được thực hiện bằng mô hình <strong>ARIMA</strong> và
+            <strong>Prophet</strong> dựa trên dữ liệu lịch sử EM-DAT.</span
+          >
+        </p>
+      </div>
+      <!-- END: InfoNoteSection -->
+      <!-- BEGIN: ActionButtons -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <button
+          class="btn-gold px-10 py-3 rounded-full font-bold uppercase tracking-wider text-sm flex items-center justify-center gap-2 shadow-lg"
+          id="fys_btn_apply"
+        >
+          <i class="fas fa-magic"></i> Áp dụng
+        </button>
+        <button
+          class="btn-outline-fantasy px-10 py-3 rounded-full font-bold uppercase tracking-wider text-sm flex items-center justify-center gap-2"
+          id="fys_btn_cancel"
+        >
+          Hủy bỏ
+        </button>
+      </div>
+      <!-- END: ActionButtons -->
+      <!-- Decorative corner ornaments -->
+      <div
+        class="absolute top-0 left-0 p-2 text-[#d8a24a]/20 pointer-events-none"
+      >
+        <i class="fas fa-wind text-2xl"></i>
+      </div>
+      <div
+        class="absolute bottom-0 right-0 p-2 text-[#d8a24a]/20 pointer-events-none"
+      >
+        <i class="fas fa-mountain text-2xl"></i>
+      </div>
+    </div>
+    <!-- END: ForecastYearSelectionModal -->
+    <!-- BEGIN: InteractiveScripts -->
+    <script data-purpose="modal-interactivity">
+      const slider = document.getElementById("fys_slider_years");
+      const yearDisplay = document.getElementById("fys_txt_selected_year");
+      const currentYear = 2024;
+
+      slider.addEventListener("input", (e) => {
+        const value = parseInt(e.target.value);
+        const forecastYear = currentYear + value;
+        yearDisplay.innerHTML = `${forecastYear} <span class="text-sm font-normal text-[#b6ab9a] ml-1">(+${value} năm)</span>`;
+      });
+
+      // Close modal simulation
+      document
+        .getElementById("fys_btn_cancel")
+        .addEventListener("click", () => {
+          alert("Đã đóng popup chọn năm.");
+        });
+
+      document.getElementById("fys_btn_apply").addEventListener("click", () => {
+        const val = slider.value;
+        alert(`Đang khởi tạo thuật toán dự báo cho ${val} năm tiếp theo...`);
+      });
+    </script>
+    <!-- END: InteractiveScripts -->
+  </body>
+</html>

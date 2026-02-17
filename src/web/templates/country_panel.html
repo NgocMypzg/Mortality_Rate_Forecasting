@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chi tiết quốc gia</title>
+    <!-- Chart.js, Tailwind, Font Awesome -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: #0a1c2c;
+        overflow: hidden;
+        height: 100vh;
+      }
+      .cdp-side-panel {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 450px;
+        height: 100%;
+        background: linear-gradient(145deg, #162f3a, #0a1f2c);
+        border-left: 2px solid #d8a24a;
+        box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+        display: flex;
+        flex-direction: column;
+      }
+      .text-gold {
+        color: #f0c674;
+      }
+      .border-gold {
+        border-color: #d8a24a;
+      }
+      /* các style khác từ Frame 3 */
+    </style>
+  </head>
+  <body class="font-crimson text-slate-100">
+    <aside class="cdp-side-panel" id="cdp_panel">
+      <header
+        class="p-6 border-b border-slate-700/50 flex justify-between items-start"
+      >
+        <div>
+          <h1 class="text-3xl font-bold text-gold" id="cdp_txt_country_name">
+            Việt Nam
+          </h1>
+          <p class="text-slate-400 text-lg" id="cdp_txt_region">
+            South-eastern Asia
+          </p>
+        </div>
+        <button class="text-slate-400 hover:text-white" id="cdp_btn_close">
+          <i class="fa-solid fa-xmark text-2xl"></i>
+        </button>
+      </header>
+      <div class="flex-1 overflow-y-auto p-6 space-y-8">
+        <!-- Model toggle -->
+        <section>
+          <label
+            class="block text-sm uppercase tracking-wider text-slate-500 mb-3"
+            >Mô hình dự báo</label
+          >
+          <div
+            class="inline-flex rounded-md shadow-sm"
+            id="cdp_btn_toggle_model"
+          >
+            <button
+              class="px-6 py-2 text-sm font-medium border border-gold rounded-l-lg bg-gold text-slate-900"
+            >
+              ARIMA
+            </button>
+            <button
+              class="px-6 py-2 text-sm font-medium border border-gold rounded-r-lg text-gold hover:bg-gold/10"
+            >
+              Prophet
+            </button>
+          </div>
+        </section>
+        <!-- Chart -->
+        <section>
+          <div class="bg-slate-900/50 p-4 border border-slate-700 rounded-lg">
+            <canvas id="cdp_chart_time_series" height="250"></canvas>
+          </div>
+        </section>
+        <!-- Forecast values -->
+        <section class="grid grid-cols-1 gap-4">
+          <div
+            class="bg-slate-800/40 p-4 border-l-4 border-orange-500 rounded-r-lg"
+          >
+            <h3 class="text-xs uppercase text-slate-500 mb-1">
+              Dự báo năm 2028
+            </h3>
+            <p
+              class="text-2xl font-bold text-orange-400"
+              id="cdp_txt_forecast_value"
+            >
+              0.28
+              <span class="text-sm font-normal text-slate-400">/ 100k</span>
+            </p>
+          </div>
+          <div
+            class="bg-slate-800/40 p-4 border-l-4 border-blue-500 rounded-r-lg"
+          >
+            <h3 class="text-xs uppercase text-slate-500 mb-1">KTC 80%</h3>
+            <p
+              class="text-lg font-semibold text-blue-300"
+              id="cdp_txt_confidence_interval"
+            >
+              [0.12, 0.45]
+            </p>
+          </div>
+        </section>
+        <!-- Historical stats -->
+        <section>
+          <h3 class="text-sm uppercase tracking-wider text-slate-500 mb-3">
+            Thống kê lịch sử
+          </h3>
+          <div
+            class="bg-slate-900/30 p-4 border border-slate-800 rounded-lg text-sm"
+            id="cdp_txt_stats"
+          >
+            <div
+              class="flex justify-between border-b border-slate-800 pb-2 mb-2"
+            >
+              <span>Trung bình:</span
+              ><span class="font-bold text-white">0.15</span>
+            </div>
+            <div
+              class="flex justify-between border-b border-slate-800 pb-2 mb-2"
+            >
+              <span>Cao nhất:</span
+              ><span class="font-bold text-white">1.2</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Thấp nhất:</span><span class="font-bold text-white">0</span>
+            </div>
+          </div>
+        </section>
+      </div>
+      <footer
+        class="p-6 border-t border-slate-700/50 bg-slate-950/30 flex gap-3"
+      >
+        <button
+          class="flex-1 py-3 btn-fantasy btn-fantasy-primary flex items-center justify-center gap-2"
+          id="cdp_btn_export"
+        >
+          <i class="fa-solid fa-file-export"></i> Xuất
+        </button>
+        <button class="px-4 py-3 btn-fantasy btn-fantasy-outline">
+          <i class="fa-solid fa-gear"></i>
+        </button>
+      </footer>
+    </aside>
+    <script>
+      // Chart.js mock
+      const ctx = document
+        .getElementById("cdp_chart_time_series")
+        .getContext("2d");
+      new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: [
+            "2018",
+            "2019",
+            "2020",
+            "2021",
+            "2022",
+            "2023",
+            "2024",
+            "2025",
+            "2026",
+            "2027",
+            "2028",
+          ],
+          datasets: [
+            {
+              label: "Lịch sử",
+              data: [
+                0.12,
+                0.18,
+                0.05,
+                0.22,
+                0.14,
+                0.16,
+                0.2,
+                null,
+                null,
+                null,
+                null,
+              ],
+              borderColor: "#3b82f6",
+              borderWidth: 3,
+              pointRadius: 4,
+            },
+            {
+              label: "Dự báo",
+              data: [
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                0.2,
+                0.22,
+                0.25,
+                0.26,
+                0.28,
+              ],
+              borderColor: "#fb923c",
+              borderDash: [5, 5],
+              borderWidth: 3,
+            },
+          ],
+        },
+        options: { responsive: true, maintainAspectRatio: false },
+      });
+      document.getElementById("cdp_btn_close").addEventListener("click", () => {
+        window.close();
+      });
+    </script>
+  </body>
+</html>

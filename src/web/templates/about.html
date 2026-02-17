@@ -1,0 +1,388 @@
+<!doctype html>
+
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>SDG Forecast - Dự báo tỷ lệ tử vong do thảm họa</title>
+    <!-- Google Fonts: Crimson Pro -->
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&amp;display=swap"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+      rel="stylesheet"
+    />
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              "abyss-blue": "#0a1c2c",
+              "deep-teal": "#0f3b4f",
+              "gold-primary": "#d8a24a",
+              "gold-dark": "#b37b3a",
+              "emerald-dark": "#145a5a",
+              "surface-stone": "#1c2c3a",
+              "text-light": "#efe6d8",
+              "text-gold": "#f0c674",
+            },
+            fontFamily: {
+              serif: ["Crimson Pro", "serif"],
+            },
+          },
+        },
+      };
+    </script>
+    <style data-purpose="custom-fantasy-styles">
+      body {
+        background-color: #0a141f;
+        background-image: radial-gradient(
+          circle at 30% 20%,
+          #1c3f4f 0%,
+          #07121f 90%
+        );
+        color: #efe6d8;
+        font-family: "Crimson Pro", serif;
+      }
+
+      .fantasy-border {
+        border: 2px solid #d8a24a;
+        border-radius: 40px 10px 40px 10px;
+        box-shadow:
+          0 10px 15px -5px rgba(0, 0, 0, 0.7),
+          0 0 0 1px #d8a24a;
+      }
+
+      .btn-fantasy {
+        background: linear-gradient(145deg, #d8a24a, #b37b3a);
+        color: #0a1c2c;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        border-radius: 30px 8px 30px 8px;
+      }
+
+      .btn-fantasy:hover {
+        box-shadow: 0 0 20px #f0c674;
+        transform: translateY(-2px);
+      }
+
+      .map-container {
+        background: rgba(15, 59, 79, 0.2);
+        border: 1px solid rgba(216, 162, 74, 0.3);
+        position: relative;
+        overflow: hidden;
+      }
+
+      /* Range slider customization */
+      input[type="range"] {
+        -webkit-appearance: none;
+        background: transparent;
+      }
+      input[type="range"]::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 8px;
+        background: #1c2c3a;
+        border: 1px solid #d8a24a;
+        border-radius: 4px;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        height: 24px;
+        width: 24px;
+        border-radius: 50%;
+        background: #d8a24a;
+        cursor: pointer;
+        margin-top: -9px;
+        box-shadow: 0 0 10px #f0c674;
+        border: 2px solid #efe6d8;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen flex flex-col">
+    <!-- BEGIN: MainHeader -->
+    <header class="p-4 lg:px-8 z-50">
+      <nav
+        class="max-w-7xl mx-auto flex items-center justify-between bg-surface-stone/80 backdrop-blur-md border-2 border-gold-primary rounded-full px-8 py-3 shadow-2xl"
+      >
+        <div class="flex items-center gap-2">
+          <span
+            class="text-3xl text-gold-primary drop-shadow-[0_0_8px_gold] font-bold tracking-widest"
+            >🌪️ SDG·FORECAST</span
+          >
+        </div>
+        <div
+          class="hidden md:flex items-center gap-8 font-semibold uppercase tracking-wider text-sm"
+        >
+          <a class="hover:text-gold-primary transition-colors" href="#"
+            >Trang chủ</a
+          >
+          <a class="hover:text-gold-primary transition-colors" href="#"
+            >Về dự án</a
+          >
+          <a class="hover:text-gold-primary transition-colors" href="#"
+            >SDG 11.5</a
+          >
+          <a class="btn-fantasy px-6 py-2" href="#">Dự báo ngay</a>
+        </div>
+        <button class="md:hidden text-gold-primary text-2xl">
+          <i class="fas fa-bars"></i>
+        </button>
+      </nav>
+    </header>
+    <!-- END: MainHeader -->
+    <!-- BEGIN: MainContent -->
+    <main class="flex-grow relative flex flex-col p-4 lg:p-8">
+      <!-- BEGIN: MapArea -->
+      <section
+        class="map-container flex-grow rounded-3xl relative overflow-hidden flex items-center justify-center"
+        data-purpose="world-map-container"
+        id="hp_map_world"
+      >
+        <!-- Mock Map Representation -->
+        <div
+          class="absolute inset-0 opacity-40 bg-[url('https://placehold.co/1920x1080/0a1c2c/efe6d8?text=World+Map+Interface')] bg-cover bg-center"
+        ></div>
+        <!-- Simulated World Map Polygons (Visual Mockup) -->
+        <svg
+          class="w-full h-full max-w-5xl opacity-80"
+          viewbox="0 0 1000 500"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            class="cursor-pointer hover:fill-gold-primary transition-colors"
+            d="M200,100 L250,120 L240,150 L180,140 Z"
+            fill="#145a5a"
+          ></path>
+          <path
+            class="cursor-pointer hover:fill-gold-primary transition-colors"
+            d="M700,300 L750,320 L740,380 L680,360 Z"
+            fill="#d8a24a"
+          ></path>
+          <path
+            class="cursor-pointer hover:fill-gold-primary transition-colors"
+            d="M800,250 L830,260 L825,290 L790,280 Z"
+            fill="#0f3b4f"
+          ></path>
+          <!-- Vietnam Highlight -->
+          <path
+            class="cursor-pointer hover:fill-gold-primary transition-colors stroke-gold-primary stroke-2"
+            d="M780,240 L790,230 L795,250 L785,260 Z"
+            fill="#e67e22"
+            id="vietnam_path"
+          ></path>
+        </svg>
+        <!-- BEGIN: Tooltip -->
+        <div
+          class="absolute top-1/2 left-[78%] -translate-x-1/2 -translate-y-1/2 z-40"
+          data-purpose="country-tooltip"
+          id="hp_tooltip"
+        >
+          <div
+            class="bg-surface-stone border border-gold-primary p-3 rounded-tr-2xl rounded-bl-2xl shadow-2xl min-w-[180px]"
+          >
+            <div
+              class="text-gold-primary font-bold border-b border-gold-primary/30 pb-1 mb-2"
+            >
+              🇻🇳 Việt Nam
+            </div>
+            <div class="text-xs space-y-1">
+              <div class="flex justify-between">
+                <span>Năm:</span>
+                <span class="font-semibold text-white">2024</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Tỷ lệ tử vong:</span>
+                <span class="font-semibold text-white">0.32/100k</span>
+              </div>
+            </div>
+            <div class="mt-2 text-[10px] italic text-gold-dark">
+              Click để xem chi tiết
+            </div>
+          </div>
+        </div>
+        <!-- END: Tooltip -->
+        <!-- BEGIN: FloatingControls -->
+        <div class="absolute top-6 left-6 flex flex-col gap-4">
+          <!-- Mode Indicator -->
+          <div
+            class="bg-surface-stone/90 border border-gold-primary px-4 py-2 rounded-full flex items-center gap-3 shadow-lg"
+            id="hp_txt_mode_indicator"
+          >
+            <div
+              class="w-2 h-2 rounded-full bg-emerald-dark animate-pulse shadow-[0_0_8px_#145a5a]"
+            ></div>
+            <span
+              class="text-sm font-semibold uppercase tracking-widest text-text-gold"
+              >Chế độ lịch sử</span
+            >
+          </div>
+          <!-- Filter Dropdown -->
+          <div
+            class="bg-surface-stone/90 border border-gold-primary p-4 rounded-2xl shadow-lg w-64"
+          >
+            <label
+              class="block text-xs uppercase tracking-tighter mb-2 text-gold-dark"
+              >Loại thảm họa</label
+            >
+            <select
+              class="w-full bg-deep-teal border-gold-primary/50 rounded-lg text-sm text-text-light focus:ring-gold-primary focus:border-gold-primary"
+              id="hp_dropdown_disaster_type"
+            >
+              <option>Tất cả thảm họa</option>
+              <option>Lũ lụt (Flood)</option>
+              <option>Bão (Storm)</option>
+              <option>Động đất (Earthquake)</option>
+              <option>Hạn hán (Drought)</option>
+            </select>
+          </div>
+          <!-- Legend -->
+          <div
+            class="bg-surface-stone/90 border border-gold-primary p-4 rounded-2xl shadow-lg"
+            id="hp_legend"
+          >
+            <h4 class="text-xs uppercase font-bold text-gold-primary mb-3">
+              Tỷ lệ tử vong (/100k)
+            </h4>
+            <div class="space-y-2">
+              <div class="flex items-center gap-3">
+                <span
+                  class="w-4 h-4 rounded bg-[#0a3a4a] border border-white/20"
+                ></span>
+                <span class="text-xs">0.00 - 0.50</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span
+                  class="w-4 h-4 rounded bg-[#145a5a] border border-white/20"
+                ></span>
+                <span class="text-xs">0.51 - 2.00</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span
+                  class="w-4 h-4 rounded bg-[#e67e22] border border-white/20"
+                ></span>
+                <span class="text-xs">2.01 - 5.00</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span
+                  class="w-4 h-4 rounded bg-[#b37b3a] border border-white/20"
+                ></span>
+                <span class="text-xs">&gt; 5.00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- END: FloatingControls -->
+        <!-- BEGIN: ForecastAction -->
+        <div class="absolute bottom-6 right-6 flex flex-col items-end gap-3">
+          <button
+            class="btn-fantasy px-8 py-4 text-lg flex items-center gap-3 group"
+            id="hp_btn_forecast"
+          >
+            <span>Kích hoạt dự báo</span>
+            <i
+              class="fas fa-magic transition-transform group-hover:rotate-45"
+            ></i>
+          </button>
+          <button
+            class="hidden text-xs text-gold-primary hover:underline uppercase tracking-widest"
+            id="hp_btn_reset_forecast"
+          >
+            <i class="fas fa-undo mr-1"></i> Quay lại lịch sử
+          </button>
+        </div>
+        <!-- END: ForecastAction -->
+      </section>
+      <!-- END: MapArea -->
+      <!-- BEGIN: YearControl -->
+      <section
+        class="mt-8 bg-surface-stone border-2 border-gold-primary rounded-2xl p-6 shadow-2xl"
+      >
+        <div class="flex flex-col md:flex-row items-center gap-8">
+          <div class="text-center md:text-left min-w-[120px]">
+            <span
+              class="text-4xl font-bold text-gold-primary block tracking-tighter"
+              id="hp_txt_current_year"
+              >2024</span
+            >
+            <span class="text-[10px] uppercase tracking-[0.2em] text-gold-dark"
+              >Năm hiển thị</span
+            >
+          </div>
+          <div class="flex-grow w-full">
+            <input
+              class="w-full h-2 cursor-pointer"
+              id="hp_slider_year"
+              max="2024"
+              min="2000"
+              type="range"
+              value="2024"
+            />
+            <div
+              class="flex justify-between mt-2 text-[10px] text-gold-dark font-semibold"
+            >
+              <span>2000</span>
+              <span>2005</span>
+              <span>2010</span>
+              <span>2015</span>
+              <span>2020</span>
+              <span>2024</span>
+            </div>
+          </div>
+          <div
+            class="hidden lg:flex items-center gap-4 text-gold-dark/50 border-l border-gold-primary/30 pl-8 italic text-sm"
+          >
+            Sử dụng thanh trượt để du hành qua các mốc thời gian lịch sử thảm
+            họa.
+          </div>
+        </div>
+      </section>
+      <!-- END: YearControl -->
+    </main>
+    <!-- END: MainContent -->
+    <!-- BEGIN: Footer -->
+    <footer
+      class="p-6 text-center border-t border-gold-primary/20 bg-abyss-blue"
+    >
+      <div
+        class="flex flex-col md:flex-row justify-between items-center max-w-7xl mx-auto gap-4"
+      >
+        <p class="text-[10px] uppercase tracking-widest text-gold-dark/70">
+          © 2026 · Hệ thống giám sát SDG 11.5 · Công nghệ ARIMA &amp; Facebook
+          Prophet
+        </p>
+        <div class="flex gap-4 text-gold-dark/70 text-sm">
+          <a class="hover:text-gold-primary" href="#">Điều khoản</a>
+          <a class="hover:text-gold-primary" href="#">Dữ liệu</a>
+          <a class="hover:text-gold-primary" href="#">Liên hệ</a>
+        </div>
+      </div>
+    </footer>
+    <!-- END: Footer -->
+    <!-- BEGIN: Scripts -->
+    <script data-purpose="interaction-logic">
+      // Mock interaction for the year slider
+      const yearSlider = document.getElementById("hp_slider_year");
+      const currentYearText = document.getElementById("hp_txt_current_year");
+
+      yearSlider.addEventListener("input", (e) => {
+        currentYearText.textContent = e.target.value;
+      });
+
+      // Mock open forecast modal
+      const forecastBtn = document.getElementById("hp_btn_forecast");
+      forecastBtn.addEventListener("click", () => {
+        alert("Mở Frame 2: Popup chọn năm dự báo (Tính năng đang phát triển)");
+      });
+    </script>
+    <!-- END: Scripts -->
+  </body>
+</html>
