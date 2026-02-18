@@ -1,0 +1,853 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>SDG Forecast - Dự báo tỷ lệ tử vong do thảm họa</title>
+    <!-- Google Fonts: Crimson Pro -->
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+      rel="stylesheet"
+    />
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <!-- Leaflet CSS -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              "abyss-blue": "#0a1c2c",
+              "deep-teal": "#0f3b4f",
+              "gold-primary": "#d8a24a",
+              "gold-dark": "#b37b3a",
+              "emerald-dark": "#145a5a",
+              "surface-stone": "#1c2c3a",
+              "text-light": "#efe6d8",
+              "text-gold": "#f0c674",
+            },
+            fontFamily: {
+              serif: ["Crimson Pro", "serif"],
+            },
+          },
+        },
+      };
+    </script>
+    <style data-purpose="custom-fantasy-styles">
+      body {
+        background-color: #0a141f;
+        background-image: radial-gradient(
+          circle at 30% 20%,
+          #1c3f4f 0%,
+          #07121f 90%
+        );
+        color: #efe6d8;
+        font-family: "Crimson Pro", serif;
+      }
+
+      .fantasy-border {
+        border: 2px solid #d8a24a;
+        border-radius: 40px 10px 40px 10px;
+        box-shadow:
+          0 10px 15px -5px rgba(0, 0, 0, 0.7),
+          0 0 0 1px #d8a24a;
+      }
+
+      .btn-fantasy {
+        background: linear-gradient(145deg, #d8a24a, #b37b3a);
+        color: #0a1c2c;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        border-radius: 30px 8px 30px 8px;
+      }
+
+      .btn-fantasy:hover {
+        box-shadow: 0 0 20px #f0c674;
+        transform: translateY(-2px);
+      }
+
+      .map-container {
+        height: 70vh;
+        background: rgba(15, 59, 79, 0.2);
+        border: 1px solid rgba(216, 162, 74, 0.3);
+        position: relative;
+        overflow: hidden;
+      }
+
+      /* Range slider customization */
+      input[type="range"] {
+        -webkit-appearance: none;
+        background: transparent;
+      }
+      input[type="range"]::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 8px;
+        background: #1c2c3a;
+        border: 1px solid #d8a24a;
+        border-radius: 4px;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        height: 24px;
+        width: 24px;
+        border-radius: 50%;
+        background: #d8a24a;
+        cursor: pointer;
+        margin-top: -9px;
+        box-shadow: 0 0 10px #f0c674;
+        border: 2px solid #efe6d8;
+      }
+
+      /* CSS cho thẻ map */
+      #map {
+        width: 100%;
+        height: 600px;
+        z-index: 1;
+        background: #0a1c2c;
+      }
+
+      /* ===== FANTASY TOOLTIP STYLE ===== */
+      .leaflet-tooltip.fantasy-tooltip-wrapper {
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        padding: 0;
+      }
+
+      .fantasy-card {
+        background-color: #1c2c3a;
+        border: 2px solid #d8a24a;
+        border-radius: 40px 10px 40px 10px;
+        padding: 16px 20px;
+        min-width: 220px;
+        box-shadow:
+          0 15px 30px rgba(0, 0, 0, 0.7),
+          0 0 0 1px #d8a24a;
+        color: #efe6d8;
+        font-family: "Crimson Pro", serif;
+        position: relative;
+        animation: fadeInTooltip 0.2s ease-out;
+      }
+
+      @keyframes fadeInTooltip {
+        from {
+          opacity: 0;
+          transform: translateY(5px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .fantasy-card .header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-bottom: 1px solid rgba(216, 162, 74, 0.3);
+        padding-bottom: 8px;
+        margin-bottom: 8px;
+      }
+
+      .fantasy-card .country-name {
+        font-size: 16px;
+        font-weight: 700;
+        color: #f0c674;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .fantasy-card .row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        margin-bottom: 4px;
+      }
+
+      .fantasy-card .value {
+        font-weight: bold;
+        color: #fff;
+      }
+
+      .fantasy-card .hint {
+        margin-top: 8px;
+        font-size: 11px;
+        font-style: italic;
+        color: #b37b3a;
+        text-align: right;
+      }
+
+      /* Panel chi tiết quốc gia */
+      .cdp-side-panel {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 450px;
+        height: 100%;
+        background: linear-gradient(145deg, #162f3a, #0a1f2c);
+        border-left: 2px solid #d8a24a;
+        box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.3s ease-in-out;
+        transform: translateX(100%);
+      }
+
+      .cdp-side-panel.translate-x-0 {
+        transform: translateX(0);
+      }
+
+      .cdp-side-panel .header {
+        padding: 1.5rem;
+        border-bottom: 1px solid rgba(100, 116, 139, 0.5);
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+      }
+
+      .cdp-side-panel .content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+      }
+
+      .cdp-side-panel .footer {
+        padding: 1.5rem;
+        border-top: 1px solid rgba(100, 116, 139, 0.5);
+        background: rgba(2, 6, 23, 0.3);
+        display: flex;
+        gap: 0.75rem;
+      }
+
+      .stat-card {
+        background: rgba(15, 38, 51, 0.6);
+        border-left: 3px solid #d8a24a;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+      }
+
+      .text-gold {
+        color: #f0c674;
+      }
+
+      .border-gold {
+        border-color: #d8a24a;
+      }
+
+      .bg-gold {
+        background-color: #d8a24a;
+      }
+
+      .btn-fantasy-primary {
+        background: linear-gradient(145deg, #d8a24a, #b37b3a);
+        color: #07121f;
+      }
+
+      .btn-fantasy-primary:hover {
+        background: linear-gradient(145deg, #e6b15c, #c68f42);
+        box-shadow: 0 0 15px rgba(216, 162, 74, 0.5);
+      }
+
+      .btn-fantasy-outline {
+        border: 1px solid #d8a24a;
+        color: #d8a24a;
+        background: transparent;
+      }
+
+      .btn-fantasy-outline:hover {
+        background: rgba(216, 162, 74, 0.1);
+      }
+    </style>
+  </head>
+  <body class="min-h-screen flex flex-col">
+    <!-- BEGIN: MainHeader -->
+    <header class="p-4 lg:px-8 z-50">
+      <nav
+        class="max-w-7xl mx-auto flex items-center justify-between bg-surface-stone/80 backdrop-blur-md border-2 border-gold-primary rounded-full px-8 py-3 shadow-2xl"
+      >
+        <div class="flex items-center gap-2">
+          <span
+            class="text-3xl text-gold-primary drop-shadow-[0_0_8px_gold] font-bold tracking-widest"
+            >🌪️ SDG·FORECAST</span
+          >
+        </div>
+        <div
+          class="hidden md:flex items-center gap-8 font-semibold uppercase tracking-wider text-sm"
+        >
+          <a class="hover:text-gold-primary transition-colors" href="#"
+            >Trang chủ</a
+          >
+          <a class="hover:text-gold-primary transition-colors" href="#"
+            >Về dự án</a
+          >
+          <a class="hover:text-gold-primary transition-colors" href="#"
+            >SDG 11.5</a
+          >
+          <a class="btn-fantasy px-6 py-2" href="#">Dự báo ngay</a>
+        </div>
+        <button class="md:hidden text-gold-primary text-2xl">
+          <i class="fas fa-bars"></i>
+        </button>
+      </nav>
+    </header>
+    <!-- END: MainHeader -->
+
+    <!-- BEGIN: MainContent -->
+    <main class="flex-grow relative flex flex-col p-4 lg:p-8">
+      <!-- BEGIN: MapArea -->
+      <section
+        class="map-container flex-grow rounded-3xl relative overflow-hidden"
+        id="hp_map_world"
+      >
+        <!-- Bản đồ Leaflet -->
+        <div id="map"></div>
+
+        <!-- FloatingControls và ForecastAction -->
+        <div class="absolute top-6 left-6 flex flex-col gap-4 z-10">
+          <div
+            class="bg-surface-stone/90 border border-gold-primary px-4 py-2 rounded-full flex items-center gap-3 shadow-lg"
+            id="hp_txt_mode_indicator"
+          >
+            <div
+              class="w-2 h-2 rounded-full bg-emerald-dark animate-pulse shadow-[0_0_8px_#145a5a]"
+            ></div>
+            <span
+              class="text-sm font-semibold uppercase tracking-widest text-text-gold"
+              >Chế độ lịch sử</span
+            >
+          </div>
+          <div
+            class="bg-surface-stone/90 border border-gold-primary p-4 rounded-2xl shadow-lg"
+            id="hp_legend"
+          >
+            <h4 class="text-xs uppercase font-bold text-gold-primary mb-3">
+              Tỷ lệ tử vong (/100k)
+            </h4>
+            <div class="space-y-2">
+              <div class="flex items-center gap-3">
+                <span
+                  class="w-4 h-4 rounded bg-[#0a3a4a] border border-white/20"
+                ></span
+                ><span class="text-xs">0.00 - 0.50</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span
+                  class="w-4 h-4 rounded bg-[#145a5a] border border-white/20"
+                ></span
+                ><span class="text-xs">0.51 - 2.00</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span
+                  class="w-4 h-4 rounded bg-[#e67e22] border border-white/20"
+                ></span
+                ><span class="text-xs">2.01 - 5.00</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span
+                  class="w-4 h-4 rounded bg-[#b37b3a] border border-white/20"
+                ></span
+                ><span class="text-xs">&gt; 5.00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="absolute bottom-6 right-6 flex flex-col items-end gap-3 z-10"
+        >
+          <button
+            class="btn-fantasy px-8 py-4 text-lg flex items-center gap-3 group"
+            id="hp_btn_forecast"
+          >
+            <span>Kích hoạt dự báo</span>
+            <i
+              class="fas fa-magic transition-transform group-hover:rotate-45"
+            ></i>
+          </button>
+          <button
+            class="hidden text-xs text-gold-primary hover:underline uppercase tracking-widest"
+            id="hp_btn_reset_forecast"
+          >
+            <i class="fas fa-undo mr-1"></i> Quay lại lịch sử
+          </button>
+        </div>
+      </section>
+      <!-- END: MapArea -->
+
+      <!-- YearControl -->
+      <section
+        class="mt-8 bg-surface-stone border-2 border-gold-primary rounded-2xl p-6 shadow-2xl"
+      >
+        <div class="flex flex-col md:flex-row items-center gap-8">
+          <div class="text-center md:text-left min-w-[120px]">
+            <span
+              class="text-4xl font-bold text-gold-primary block tracking-tighter"
+              id="hp_txt_current_year"
+              >2024</span
+            >
+            <span class="text-[10px] uppercase tracking-[0.2em] text-gold-dark"
+              >Năm hiển thị</span
+            >
+          </div>
+          <div class="flex-grow w-full">
+            <input
+              class="w-full h-2 cursor-pointer"
+              id="hp_slider_year"
+              max="2024"
+              min="2000"
+              type="range"
+              value="2024"
+            />
+            <div
+              class="flex justify-between mt-2 text-[10px] text-gold-dark font-semibold"
+            >
+              <span>2000</span><span>2005</span><span>2010</span
+              ><span>2015</span><span>2020</span><span>2024</span>
+            </div>
+          </div>
+          <div
+            class="hidden lg:flex items-center gap-4 text-gold-dark/50 border-l border-gold-primary/30 pl-8 italic text-sm"
+          >
+            Sử dụng thanh trượt để du hành qua các mốc thời gian lịch sử thảm
+            họa.
+          </div>
+        </div>
+      </section>
+    </main>
+    <!-- END: MainContent -->
+
+    <!-- Footer -->
+    <footer
+      class="p-6 text-center border-t border-gold-primary/20 bg-abyss-blue"
+    >
+      <div
+        class="flex flex-col md:flex-row justify-between items-center max-w-7xl mx-auto gap-4"
+      >
+        <p class="text-[10px] uppercase tracking-widest text-gold-dark/70">
+          © 2026 · Hệ thống giám sát SDG 11.5 · Công nghệ ARIMA & Facebook
+          Prophet
+        </p>
+        <div class="flex gap-4 text-gold-dark/70 text-sm">
+          <a class="hover:text-gold-primary" href="#">Điều khoản</a>
+          <a class="hover:text-gold-primary" href="#">Dữ liệu</a>
+          <a class="hover:text-gold-primary" href="#">Liên hệ</a>
+        </div>
+      </div>
+    </footer>
+
+    <!-- BEGIN: CountryDetailPanel -->
+    <aside class="cdp-side-panel" id="cdp_panel">
+      <div class="header">
+        <div>
+          <h1
+            class="text-3xl font-bold text-gold tracking-wide"
+            id="cdp_txt_country_name"
+          >
+            Việt Nam
+          </h1>
+          <p class="text-slate-400 text-lg" id="cdp_txt_region">
+            South-eastern Asia
+          </p>
+        </div>
+        <button
+          class="text-slate-400 hover:text-white transition-colors"
+          id="cdp_btn_close"
+        >
+          <i class="fa-solid fa-xmark text-2xl"></i>
+        </button>
+      </div>
+      <div class="content">
+        <!-- Chart -->
+        <section>
+          <div
+            class="bg-slate-900/50 p-4 border border-slate-700 rounded-lg shadow-inner"
+          >
+            <canvas id="cdp_chart_time_series" height="250"></canvas>
+          </div>
+          <p class="text-xs text-slate-500 mt-2 italic">
+            * Đường nét đứt biểu thị dữ liệu dự báo
+          </p>
+        </section>
+        <!-- Forecast Values (ẩn nếu không có dự báo) -->
+        <section
+          class="grid grid-cols-1 gap-4 hidden"
+          id="cdp_forecast_section"
+        >
+          <div
+            class="bg-slate-800/40 p-4 border-l-4 border-orange-500 rounded-r-lg"
+          >
+            <h3 class="text-xs uppercase text-slate-500 mb-1">
+              Dự báo năm <span id="cdp_forecast_year"></span>
+            </h3>
+            <p
+              class="text-2xl font-bold text-orange-400"
+              id="cdp_txt_forecast_value"
+            >
+              0.00
+              <span class="text-sm font-normal text-slate-400">/ 100k</span>
+            </p>
+          </div>
+          <div
+            class="bg-slate-800/40 p-4 border-l-4 border-blue-500 rounded-r-lg"
+          >
+            <h3 class="text-xs uppercase text-slate-500 mb-1">KTC 80%</h3>
+            <p
+              class="text-lg font-semibold text-blue-300"
+              id="cdp_txt_confidence_interval"
+            >
+              [0.00, 0.00]
+            </p>
+          </div>
+        </section>
+        <!-- Historical Statistics -->
+        <section>
+          <h3 class="text-sm uppercase tracking-wider text-slate-500 mb-3">
+            Thống kê lịch sử
+          </h3>
+          <div class="grid grid-cols-2 gap-4" id="cdp_stats_container">
+            <div class="stat-card">
+              <p class="text-xs uppercase text-gold-dark">Trung bình</p>
+              <p class="text-2xl font-bold" id="cdp_stats_avg">0.00</p>
+            </div>
+            <div class="stat-card">
+              <p class="text-xs uppercase text-gold-dark">Cao nhất</p>
+              <p class="text-2xl font-bold" id="cdp_stats_max">0.00</p>
+            </div>
+            <div class="stat-card">
+              <p class="text-xs uppercase text-gold-dark">Thấp nhất</p>
+              <p class="text-2xl font-bold" id="cdp_stats_min">0.00</p>
+            </div>
+            <div class="stat-card">
+              <p class="text-xs uppercase text-gold-dark">Tổng số năm</p>
+              <p class="text-2xl font-bold" id="cdp_stats_years">0</p>
+            </div>
+          </div>
+        </section>
+      </div>
+      <div class="footer">
+        <button
+          class="flex-1 py-3 btn-fantasy btn-fantasy-primary flex items-center justify-center gap-2"
+          id="cdp_btn_export"
+        >
+          <i class="fa-solid fa-file-export"></i> Xuất dữ liệu
+        </button>
+        <button
+          class="px-4 py-3 btn-fantasy btn-fantasy-outline"
+          title="Cài đặt mô hình"
+        >
+          <i class="fa-solid fa-gear"></i>
+        </button>
+      </div>
+    </aside>
+    <!-- END: CountryDetailPanel -->
+
+    <!-- BEGIN: Scripts -->
+    <script data-purpose="leaflet-map">
+      // Khởi tạo map
+      const map = L.map("map").setView([20, 10], 2);
+
+      L.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+        {
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; CartoDB',
+        },
+      ).addTo(map);
+
+      let geoLayer;
+      const geoJsonUrl =
+        "https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json";
+
+      // Hàm lấy flag emoji
+      function getFlagEmoji(countryCode) {
+        if (!countryCode) return "🌍";
+        const codePoints = countryCode
+          .toUpperCase()
+          .split("")
+          .map((char) => 127397 + char.charCodeAt());
+        return String.fromCodePoint(...codePoints);
+      }
+
+      function getColor(rate) {
+        return rate > 5.0
+          ? "#b37b3a"
+          : rate > 2.0
+            ? "#e67e22"
+            : rate > 0.5
+              ? "#145a5a"
+              : "#0a3a4a";
+      }
+
+      function styleFeature(feature) {
+        return {
+          fillColor: "#666", // mặc định xám
+          weight: 1,
+          opacity: 1,
+          color: "#d8a24a",
+          fillOpacity: 0.6,
+        };
+      }
+
+      let mortalityData = {};
+      let countryChart = null;
+
+      // Hàm xử lý click vào quốc gia
+      function onEachFeature(feature, layer) {
+        // Bind tooltip rỗng trước
+        layer.bindTooltip("", {
+          sticky: true,
+          direction: "top",
+          offset: [0, -10],
+          className: "fantasy-tooltip-wrapper",
+          opacity: 1,
+        });
+
+        layer.on({
+          mouseover: function (e) {
+            const layer = e.target;
+            const code = feature.id;
+
+            // ❌ KHÔNG ĐỔI MÀU
+            // Chỉ đổi viền
+            layer.setStyle({
+              weight: 3,
+              color: "#f0c674",
+            });
+
+            layer.bringToFront();
+
+            const hasData =
+              mortalityData[code] !== undefined && mortalityData[code] > 0;
+
+            const rate = hasData ? mortalityData[code].toFixed(2) : "N/A";
+            const year = yearSlider.value;
+            const countryName = feature.properties.name;
+            const flag = getFlagEmoji(code);
+
+            const tooltipHTML = `
+    <div class="fantasy-card">
+        <div class="header">
+            <span class="text-xl">${flag}</span>
+            <span class="country-name">${countryName}</span>
+        </div>
+        <div class="row">
+            <span>Năm:</span>
+            <span class="value text-gold-primary">${year}</span>
+        </div>
+        <div class="row">
+            <span>Tỷ lệ tử vong:</span>
+            <span class="value text-xl">
+                ${rate}
+                <span class="text-xs text-gray-400 font-normal">/100k</span>
+            </span>
+        </div>
+        <div class="hint">Click để xem chi tiết</div>
+    </div>
+  `;
+
+            layer.setTooltipContent(tooltipHTML);
+            layer.openTooltip();
+          },
+          mouseout: function (e) {
+            geoLayer.resetStyle(e.target);
+          },
+
+          click: function (e) {
+            const countryName = feature.properties.name;
+            const countryCode = feature.id;
+            openCountryPanel(countryName, countryCode);
+          },
+        });
+      }
+
+      // Load GeoJSON
+      fetch(geoJsonUrl)
+        .then((response) => response.json())
+        .then((data) => {
+          geoLayer = L.geoJSON(data, {
+            style: styleFeature,
+            onEachFeature: onEachFeature,
+          }).addTo(map);
+          updateMap(yearSlider.value);
+        })
+        .catch((err) => console.error("Lỗi tải GeoJSON:", err));
+
+      function updateMap(year) {
+        fetch(`/api/mortality-by-year/${year}`)
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.error) {
+              console.error(data.error);
+              return;
+            }
+            mortalityData = {};
+            data.forEach((item) => {
+              mortalityData[item["Country Code"]] = item["Mortality_Rate"];
+            });
+            if (geoLayer) {
+              geoLayer.eachLayer((layer) => {
+                const code = layer.feature.id;
+                // Nếu có dữ liệu và tỷ lệ > 0 thì tô màu theo thang, ngược lại xám
+                if (
+                  code &&
+                  mortalityData[code] !== undefined &&
+                  mortalityData[code] > 0
+                ) {
+                  const rate = mortalityData[code];
+                  layer.setStyle({
+                    fillColor: getColor(rate),
+                    fillOpacity: 0.8,
+                  });
+                } else {
+                  layer.setStyle({ fillColor: "#666", fillOpacity: 0.4 });
+                }
+              });
+            }
+          })
+          .catch((err) => console.error("Lỗi lấy dữ liệu tử vong:", err));
+      }
+
+      const yearSlider = document.getElementById("hp_slider_year");
+      const currentYearText = document.getElementById("hp_txt_current_year");
+
+      yearSlider.addEventListener("input", (e) => {
+        const year = e.target.value;
+        currentYearText.textContent = year;
+        updateMap(year);
+      });
+
+      // ===== XỬ LÝ PANEL CHI TIẾT QUỐC GIA =====
+      const panel = document.getElementById("cdp_panel");
+      const closePanelBtn = document.getElementById("cdp_btn_close");
+
+      function openPanel() {
+        panel.classList.add("translate-x-0");
+        panel.classList.remove("translate-x-full");
+      }
+
+      function closePanel() {
+        panel.classList.remove("translate-x-0");
+        panel.classList.add("translate-x-full");
+      }
+
+      closePanelBtn.addEventListener("click", closePanel);
+
+      function formatNumber(num) {
+        return num ? num.toFixed(2) : "0.00";
+      }
+
+      function loadCountryData(countryName, countryCode) {
+        fetch(`/api/historical/${encodeURIComponent(countryName)}`)
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.error) {
+              console.error("Lỗi:", data.error);
+              return;
+            }
+
+            document.getElementById("cdp_txt_country_name").textContent =
+              countryName;
+            document.getElementById("cdp_txt_region").textContent =
+              data[0]?.Region || "Không xác định";
+
+            const years = data.map((item) => item.Year);
+            const rates = data.map((item) => item.Mortality_Rate);
+
+            const avg = rates.reduce((a, b) => a + b, 0) / rates.length;
+            const max = Math.max(...rates);
+            const min = Math.min(...rates);
+            const yearCount = years.length;
+
+            document.getElementById("cdp_stats_avg").textContent =
+              formatNumber(avg);
+            document.getElementById("cdp_stats_max").textContent =
+              formatNumber(max);
+            document.getElementById("cdp_stats_min").textContent =
+              formatNumber(min);
+            document.getElementById("cdp_stats_years").textContent = yearCount;
+
+            if (countryChart) countryChart.destroy();
+
+            const ctx = document
+              .getElementById("cdp_chart_time_series")
+              .getContext("2d");
+            countryChart = new Chart(ctx, {
+              type: "line",
+              data: {
+                labels: years,
+                datasets: [
+                  {
+                    label: "Tỷ lệ tử vong (/100k)",
+                    data: rates,
+                    borderColor: "#d8a24a",
+                    backgroundColor: "rgba(216, 162, 74, 0.1)",
+                    borderWidth: 2,
+                    pointBackgroundColor: "#f0c674",
+                    pointBorderColor: "#fff",
+                    tension: 0.1,
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    grid: { color: "rgba(216, 162, 74, 0.2)" },
+                    ticks: { color: "#efe6d8" },
+                  },
+                  x: {
+                    grid: { display: false },
+                    ticks: { color: "#efe6d8", maxRotation: 45 },
+                  },
+                },
+              },
+            });
+
+            openPanel();
+          })
+          .catch((err) => console.error("Lỗi tải dữ liệu quốc gia:", err));
+      }
+
+      function openCountryPanel(countryName, countryCode) {
+        loadCountryData(countryName, countryCode);
+      }
+
+      // Xử lý nút dự báo (giữ nguyên)
+      const forecastBtn = document.getElementById("hp_btn_forecast");
+      forecastBtn.addEventListener("click", () => {
+        alert("Mở Frame 2: Popup chọn năm dự báo (Tính năng đang phát triển)");
+      });
+
+      // Xuất dữ liệu (mock)
+      document
+        .getElementById("cdp_btn_export")
+        .addEventListener("click", () => {
+          alert("Đang chuẩn bị tệp dữ liệu CSV và biểu đồ PNG...");
+        });
+    </script>
+    <!-- END: Scripts -->
+  </body>
+</html>

@@ -1,0 +1,19 @@
+/* Tổng hợp các style từ các frame, có thể bổ sung sau */
+body {
+  background-color: #0a141f;
+  color: #efe6d8;
+  font-family: "Crimson Pro", serif;
+}
+.fantasy-border {
+  border: 2px solid #d8a24a;
+  border-radius: 40px 10px 40px 10px;
+}
+.btn-fantasy {
+  background: linear-gradient(145deg, #d8a24a, #b37b3a);
+  color: #0a1c2c;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: bold;
+  border-radius: 30px 8px 30px 8px;
+}
+/* ... các style khác có thể được thêm từ các file HTML ... */
