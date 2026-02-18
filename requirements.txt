@@ -1,3 +1,10 @@
 flask
-pandas
 openpyxl
+pandas
+numpy
+matplotlib
+seaborn
+plotly
+prophet
+statsmodels
+scikit-learn
