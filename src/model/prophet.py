@@ -281,7 +281,7 @@ class ProphetModel:
         if not outliers_df.empty:
             holiday_years = outliers_df[self.date_col].tolist()
             print("Detected outlier years:", holiday_years)
-            self.plot_outlier()
+            # self.plot_outlier()
 
         else:
             holiday_years = None
@@ -300,7 +300,7 @@ class ProphetModel:
         )
 
         if cv_results.empty:
-            print("No valid models found.")
+            print("No valid saved found.")
             return None
 
         # 3. Best model theo MAE
@@ -341,5 +341,42 @@ class ProphetModel:
             "future_forecast": forecast_future,
             "holiday_years": holiday_years
         }
+
+    def train_final_model(self,
+                          best_params: dict,
+                          holiday_years=None):
+        """
+        Train Prophet model cuối cùng trên toàn bộ dữ liệu
+        (dùng để save production model)
+
+        Parameters
+        ----------
+        best_params : dict
+            Tham số tối ưu sau grid search
+        holiday_years : list, optional
+            Danh sách năm outlier để tạo holiday
+
+        Returns
+        -------
+        Prophet object (đã fit)
+        """
+
+        holidays = self._build_holidays(holiday_years)
+
+        df_p = self._to_prophet(self.df)
+
+        final_model = Prophet(
+            growth="linear",
+            seasonality_mode="additive",
+            yearly_seasonality=False,
+            weekly_seasonality=False,
+            daily_seasonality=False,
+            holidays=holidays,
+            **best_params
+        )
+
+        final_model.fit(df_p)
+
+        return final_model
 
 
