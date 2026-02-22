@@ -21,42 +21,55 @@ class ProphetModel:
         self.date_col = date_col
 
         # ==================================================
-        # 1. OUTLIER DETECTION (IQR)
+        # 1. VISUALIZE HOLIDAY (IQR)
         # ==================================================
 
-    def find_outlier_IQR(self):
-        Q1 = self.df[self.value_col].quantile(0.25)
-        Q3 = self.df[self.value_col].quantile(0.75)
-        IQR = Q3 - Q1
+    def plot_dashboard(self, df_plot=None, target_name="", holiday_years=None,
+                       year_col=None, deaths_col="Total_Deaths", pop_col="Population"):
 
-        lower_bound = Q1 - 1.5 * IQR
-        upper_bound = Q3 + 1.5 * IQR
+        import matplotlib.pyplot as plt
 
-        outliers = self.df[
-            (self.df[self.value_col] < lower_bound) |
-            (self.df[self.value_col] > upper_bound)
-            ]
+        if df_plot is None:
+            df_plot = self.df.copy()
 
-        return outliers[[self.date_col, self.value_col]]
+        if year_col is None:
+            year_col = self.date_col
 
-    def plot_outlier(self):
-        outliers = self.find_outlier_IQR()
+        holiday_years = set(holiday_years or [])
 
-        plt.figure(figsize=(10, 5))
+        fig, axs = plt.subplots(2, 2, figsize=(16, 12))
 
-        plt.plot(self.df[self.date_col],
-                 self.df[self.value_col],
-                 label="Data")
+        # 1) Total deaths
+        if deaths_col in df_plot.columns:
+            axs[0, 0].bar(df_plot[year_col], df_plot[deaths_col])
+            axs[0, 0].set_title(f"Total Deaths in {target_name}".strip())
+            for y in holiday_years:
+                axs[0, 0].axvline(y, linestyle="--", alpha=0.6)
 
-        if len(outliers) > 0:
-            plt.scatter(outliers[self.date_col],
-                        outliers[self.value_col],
-                        color="red",
-                        label="Outliers",
-                        zorder=3)
+        # 2) Mortality rate
+        axs[0, 1].plot(df_plot[year_col], df_plot[self.value_col], marker="o")
+        axs[0, 1].set_title(f"Mortality Rate in {target_name}".strip())
+        if holiday_years:
+            hol = df_plot[df_plot[year_col].isin(holiday_years)]
+            axs[0, 1].scatter(hol[year_col], hol[self.value_col], color="red", s=80, zorder=3)
 
-        plt.title("Outlier Detection (IQR)")
-        plt.legend()
+        # 3) Population
+        if pop_col in df_plot.columns:
+            axs[1, 0].bar(df_plot[year_col], df_plot[pop_col])
+            axs[1, 0].set_title(f"Population Trend in {target_name}".strip())
+            for y in holiday_years:
+                axs[1, 0].axvline(y, linestyle="--", alpha=0.6)
+
+        # 4) Pop vs mortality
+        if pop_col in df_plot.columns:
+            axs[1, 1].scatter(df_plot[pop_col], df_plot[self.value_col], alpha=0.7)
+            axs[1, 1].set_title(f"Population vs Mortality Rate in {target_name}".strip())
+            if holiday_years:
+                axs[1, 1].scatter(hol[pop_col], hol[self.value_col], color="red", s=120)
+
+        for ax in axs.flat:
+            ax.tick_params(axis="x", rotation=45)
+
         plt.tight_layout()
         plt.show()
 
@@ -259,6 +272,7 @@ class ProphetModel:
 
     def run_pipeline_prophet(self,
                              param_grid: dict,
+                             holiday_years=None,
                              min_train_periods: int = 15,
                              horizon: int = 1,
                              step: int = 1,
@@ -266,7 +280,7 @@ class ProphetModel:
                              forecast_steps: int = 5):
         """
         Pipeline Prophet:
-        1. Detect outlier bằng IQR
+        1. Detect outlier bằng visualize pick
         2. Lấy year outlier làm holiday_years
         3. Grid search
         4. Chọn best model theo MAE
@@ -275,17 +289,11 @@ class ProphetModel:
 
         print("========== PROPHET PIPELINE START ==========")
 
-        # 1. Detect outliers
-        outliers_df = self.find_outlier_IQR()
-
-        if not outliers_df.empty:
-            holiday_years = outliers_df[self.date_col].tolist()
-            print("Detected outlier years:", holiday_years)
-            # self.plot_outlier()
-
+        # 1. Holidays pick
+        if holiday_years is not None:
+            print("Manual holiday years:", holiday_years)
         else:
-            holiday_years = None
-            print("No outliers detected.")
+            print("No holiday years provided (manual).")
 
         # 2. Grid search
         print("Running grid search...")
