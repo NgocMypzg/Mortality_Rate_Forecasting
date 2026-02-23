@@ -1,4 +1,7 @@
+import json
 import os
+import pickle
+
 import pandas as pd
 from flask import Flask, render_template, jsonify, request
 
@@ -88,6 +91,53 @@ def get_historical(country):
                 elif isinstance(value, (int, float, pd.Int64Dtype, pd.Float64Dtype)):
                     record[key] = value.item() if hasattr(value, 'item') else value
     return jsonify(records)
+
+METADATA_PATH = os.path.join(BASE_DIR, "saved", "metadata.json")
+
+@app.route("/api/forecast", methods=["POST"])
+def run_forecast():
+    try:
+        data = request.get_json()
+        n_years = int(data.get("n_years", 1))
+
+        with open(METADATA_PATH, "r", encoding="utf-8") as f:
+            metadata = json.load(f)
+
+        forecast_results = {}
+
+        for country in df["Country"].unique():
+
+            model_path = metadata["countries"].get(country)
+
+            # Nếu có model riêng
+            if model_path and not model_path.startswith("fallback"):
+                full_path = os.path.join(BASE_DIR, model_path.replace("..\\", ""))
+            else:
+                # fallback region
+                region = metadata["fallback_models"].get(country)
+                if not region:
+                    continue
+                region_path = metadata["regions"].get(region)
+                full_path = os.path.join(BASE_DIR, region_path.replace("..\\", ""))
+
+            if not os.path.exists(full_path):
+                continue
+
+            with open(full_path, "rb") as f_model:
+                model = pickle.load(f_model)
+
+            future = model.make_future_dataframe(periods=n_years, freq="YE")
+            forecast = model.predict(future)
+
+            value = forecast.iloc[-1]["yhat"]
+            country_code = df[df["Country"] == country]["Country Code"].iloc[0]
+
+            forecast_results[country_code] = float(value)
+
+        return jsonify(forecast_results)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

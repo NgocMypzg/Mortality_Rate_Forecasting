@@ -157,14 +157,9 @@
           value="4"
         />
         <div
+          id="fys_slider_marks"
           class="flex justify-between mt-2 text-[#6f7c8a] text-sm font-semibold px-1"
-        >
-          <span>1</span>
-          <span>2</span>
-          <span>3</span>
-          <span>4</span>
-          <span>5</span>
-        </div>
+        ></div>
       </div>
       <!-- END: YearSelectionSliderSection -->
       <!-- BEGIN: InfoNoteSection -->
@@ -178,7 +173,7 @@
         >
           <i class="fas fa-scroll mt-1 text-[#d8a24a]"></i>
           <span
-            >Dự báo được thực hiện bằng mô hình <strong>ARIMA</strong> và
+            >Dự báo được thực hiện bằng mô hình
             <strong>Prophet</strong> dựa trên dữ liệu lịch sử EM-DAT.</span
           >
         </p>
@@ -214,28 +209,95 @@
     </div>
     <!-- END: ForecastYearSelectionModal -->
     <!-- BEGIN: InteractiveScripts -->
-    <script data-purpose="modal-interactivity">
+    <script>
       const slider = document.getElementById("fys_slider_years");
       const yearDisplay = document.getElementById("fys_txt_selected_year");
-      const currentYear = 2024;
 
+      // ===== CONFIG =====
+      const currentYear = 2024; // hoặc dùng new Date().getFullYear()
+      const maxForecastYear = 2030;
+
+      // Tính số năm tối đa có thể forecast
+      const maxYears = maxForecastYear - currentYear;
+
+      // Set max động cho slider
+      slider.max = maxYears;
+      const marksContainer = document.getElementById("fys_slider_marks");
+
+      // Tạo số 1 → maxYears tự động
+       marksContainer.innerHTML = "";
+       for (let i = 1; i <= maxYears; i++) {
+         const span = document.createElement("span");
+         span.textContent = i;
+         marksContainer.appendChild(span);
+       }
+      // Set giá trị mặc định hợp lệ
+      if (parseInt(slider.value) > maxYears) {
+        slider.value = maxYears;
+      }
+
+      // ===== UPDATE UI =====
+      function updateDisplay(value) {
+        const forecastYear = Math.min(
+          currentYear + value,
+          maxForecastYear
+        );
+
+        yearDisplay.innerHTML = `
+          ${forecastYear}
+          <span class="text-sm font-normal text-[#b6ab9a] ml-1">
+            (+${forecastYear - currentYear} năm)
+          </span>
+        `;
+      }
+
+      // Hiển thị ban đầu
+      updateDisplay(parseInt(slider.value));
+
+      // Khi kéo slider
       slider.addEventListener("input", (e) => {
-        const value = parseInt(e.target.value);
-        const forecastYear = currentYear + value;
-        yearDisplay.innerHTML = `${forecastYear} <span class="text-sm font-normal text-[#b6ab9a] ml-1">(+${value} năm)</span>`;
+        updateDisplay(parseInt(e.target.value));
       });
 
-      // Close modal simulation
+      // ===== CANCEL =====
       document
         .getElementById("fys_btn_cancel")
         .addEventListener("click", () => {
           alert("Đã đóng popup chọn năm.");
         });
 
-      document.getElementById("fys_btn_apply").addEventListener("click", () => {
-        const val = slider.value;
-        alert(`Đang khởi tạo thuật toán dự báo cho ${val} năm tiếp theo...`);
-      });
+      // ===== APPLY =====
+      document
+        .getElementById("fys_btn_apply")
+        .addEventListener("click", async () => {
+
+          const nYears = parseInt(slider.value);
+
+          // Double check an toàn
+          if (currentYear + nYears > maxForecastYear) {
+            alert("Chỉ được dự báo tối đa tới năm 2030.");
+            return;
+          }
+
+          const response = await fetch("/api/forecast", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ n_years: nYears })
+          });
+
+          const result = await response.json();
+
+          if (result.error) {
+            alert(result.error);
+            return;
+          }
+
+          // Lưu forecast để index dùng
+          localStorage.setItem("forecastData", JSON.stringify(result));
+          localStorage.setItem("forecastYears", nYears);
+
+          window.location.href = "/";
+        });
     </script>
     <!-- END: InteractiveScripts -->
   </body>

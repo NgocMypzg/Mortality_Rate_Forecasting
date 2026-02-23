@@ -610,6 +610,8 @@
 
       let mortalityData = {};
       let countryChart = null;
+      let isForecastMode = false;
+      let forecastYear = null;
 
       // Hàm xử lý click vào quốc gia
       function onEachFeature(feature, layer) {
@@ -640,7 +642,7 @@
               mortalityData[code] !== undefined && mortalityData[code] > 0;
 
             const rate = hasData ? mortalityData[code].toFixed(2) : "N/A";
-            const year = yearSlider.value;
+            const year = isForecastMode ? forecastYear : yearSlider.value;
             const countryName = feature.properties.name;
             const flag = getFlagEmoji(code);
 
@@ -669,28 +671,98 @@
             layer.openTooltip();
           },
           mouseout: function (e) {
-            geoLayer.resetStyle(e.target);
-          },
+          const layer = e.target;
+          const code = feature.id;
 
-          click: function (e) {
-            const countryName = feature.properties.name;
-            const countryCode = feature.id;
-            openCountryPanel(countryName, countryCode);
-          },
+          // trả lại viền bình thường
+          layer.setStyle({
+            weight: 1,
+            color: "#d8a24a"
+          });
+
+          // nếu có dữ liệu thì trả lại màu đúng
+          if (mortalityData[code] !== undefined && mortalityData[code] > 0) {
+            layer.setStyle({
+              fillColor: getColor(mortalityData[code]),
+              fillOpacity: 0.8
+            });
+          } else {
+            layer.setStyle({
+              fillColor: "#666",
+              fillOpacity: 0.4
+            });
+          }
+        },
+
+        click: function (e) {
+          const countryName = feature.properties.name;
+          const countryCode = feature.id;
+
+          loadCountryData(countryName, countryCode);
+        }
         });
       }
 
       // Load GeoJSON
       fetch(geoJsonUrl)
-        .then((response) => response.json())
-        .then((data) => {
-          geoLayer = L.geoJSON(data, {
-            style: styleFeature,
-            onEachFeature: onEachFeature,
-          }).addTo(map);
+      .then((response) => response.json())
+      .then((data) => {
+        geoLayer = L.geoJSON(data, {
+          style: styleFeature,
+          onEachFeature: onEachFeature,
+        }).addTo(map);
+
+        const forecastData = localStorage.getItem("forecastData");
+        const forecastYears = localStorage.getItem("forecastYears");
+
+        if (forecastData && forecastYears) {
+          mortalityData = JSON.parse(forecastData);
+
+          isForecastMode = true;
+
+          const currentYear = parseInt(yearSlider.max);
+          forecastYear = currentYear + parseInt(forecastYears);
+
+          geoLayer.eachLayer(layer => {
+            const code = layer.feature.id;
+            if (mortalityData[code]) {
+              layer.setStyle({
+                fillColor: getColor(mortalityData[code]),
+                fillOpacity: 0.8
+              });
+            }
+          });
+
+          document.querySelector("#hp_txt_mode_indicator span").textContent =
+            "Chế độ dự báo";
+          document
+          .getElementById("hp_btn_reset_forecast")
+          .classList.remove("hidden");
+
+          document
+          .getElementById("hp_btn_reset_forecast")
+          .addEventListener("click", () => {
+
+            isForecastMode = false;
+            forecastYear = null;
+
+            updateMap(yearSlider.value);
+
+            document.querySelector("#hp_txt_mode_indicator span").textContent =
+              "Chế độ lịch sử";
+
+            document
+              .getElementById("hp_btn_reset_forecast")
+              .classList.add("hidden");
+          });
+      localStorage.removeItem("forecastData");
+          localStorage.removeItem("forecastYears");
+
+        } else {
           updateMap(yearSlider.value);
-        })
-        .catch((err) => console.error("Lỗi tải GeoJSON:", err));
+        }
+      })
+      .catch((err) => console.error("Lỗi tải GeoJSON:", err));
 
       function updateMap(year) {
         fetch(`/api/mortality-by-year/${year}`)
@@ -757,79 +829,108 @@
       }
 
       function loadCountryData(countryName, countryCode) {
-        fetch(`/api/historical/${encodeURIComponent(countryName)}`)
-          .then((response) => response.json())
-          .then((data) => {
-            if (data.error) {
-              console.error("Lỗi:", data.error);
-              return;
+      fetch(`/api/historical/${encodeURIComponent(countryName)}`)
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.error) {
+            console.error("Lỗi:", data.error);
+            return;
+          }
+
+          document.getElementById("cdp_txt_country_name").textContent =
+            countryName;
+          document.getElementById("cdp_txt_region").textContent =
+            data[0]?.Region || "Không xác định";
+
+          const historicalYears = data.map((item) => item.Year);
+          const historicalRates = data.map((item) => item.Mortality_Rate);
+
+          let forecastYearsArray = [];
+          let forecastRatesArray = [];
+
+          if (isForecastMode && mortalityData[countryCode] !== undefined) {
+            const lastHistoricalYear = Math.max(...historicalYears);
+
+            forecastYearsArray = [];
+            forecastRatesArray = [];
+
+            for (let y = lastHistoricalYear + 1; y <= forecastYear; y++) {
+              forecastYearsArray.push(y);
+              forecastRatesArray.push(mortalityData[countryCode]);
             }
+          }
 
-            document.getElementById("cdp_txt_country_name").textContent =
-              countryName;
-            document.getElementById("cdp_txt_region").textContent =
-              data[0]?.Region || "Không xác định";
+          const allYears = [...historicalYears, ...forecastYearsArray];
 
-            const years = data.map((item) => item.Year);
-            const rates = data.map((item) => item.Mortality_Rate);
+          const historicalDataset = [
+            ...historicalRates,
+            ...Array(forecastYearsArray.length).fill(null),
+          ];
 
-            const avg = rates.reduce((a, b) => a + b, 0) / rates.length;
-            const max = Math.max(...rates);
-            const min = Math.min(...rates);
-            const yearCount = years.length;
+          const forecastDataset = [
+            ...Array(historicalYears.length - 1).fill(null),
+            historicalRates[historicalRates.length - 1],
+            ...forecastRatesArray,
+          ];
 
-            document.getElementById("cdp_stats_avg").textContent =
-              formatNumber(avg);
-            document.getElementById("cdp_stats_max").textContent =
-              formatNumber(max);
-            document.getElementById("cdp_stats_min").textContent =
-              formatNumber(min);
-            document.getElementById("cdp_stats_years").textContent = yearCount;
+          if (countryChart) countryChart.destroy();
 
-            if (countryChart) countryChart.destroy();
+          const ctx = document
+            .getElementById("cdp_chart_time_series")
+            .getContext("2d");
 
-            const ctx = document
-              .getElementById("cdp_chart_time_series")
-              .getContext("2d");
-            countryChart = new Chart(ctx, {
-              type: "line",
-              data: {
-                labels: years,
-                datasets: [
-                  {
-                    label: "Tỷ lệ tử vong (/100k)",
-                    data: rates,
-                    borderColor: "#d8a24a",
-                    backgroundColor: "rgba(216, 162, 74, 0.1)",
-                    borderWidth: 2,
-                    pointBackgroundColor: "#f0c674",
-                    pointBorderColor: "#fff",
-                    tension: 0.1,
-                  },
-                ],
-              },
-              options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                  y: {
-                    beginAtZero: true,
-                    grid: { color: "rgba(216, 162, 74, 0.2)" },
-                    ticks: { color: "#efe6d8" },
-                  },
-                  x: {
-                    grid: { display: false },
-                    ticks: { color: "#efe6d8", maxRotation: 45 },
-                  },
+          countryChart = new Chart(ctx, {
+            type: "line",
+            data: {
+              labels: allYears,
+              datasets: [
+                {
+                  label: "Lịch sử",
+                  data: historicalDataset,
+                  borderColor: "#d8a24a",
+                  borderWidth: 3,
+                  tension: 0.2,
+                  pointRadius: 3,
+                },
+                {
+                  label: "Dự báo",
+                  data: forecastDataset,
+                  borderColor: "#fb923c",
+                  borderDash: [6, 6],
+                  borderWidth: 3,
+                  tension: 0.2,
+                  pointRadius: 0,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  labels: { color: "#efe6d8" },
                 },
               },
-            });
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  ticks: { color: "#efe6d8" },
+                  grid: { color: "rgba(216,162,74,0.2)" },
+                },
+                x: {
+                  ticks: { color: "#efe6d8" },
+                  grid: { display: false },
+                },
+              },
+            },
+          });
 
-            openPanel();
-          })
-          .catch((err) => console.error("Lỗi tải dữ liệu quốc gia:", err));
-      }
+          openPanel();
+        })
+        .catch((err) =>
+          console.error("Lỗi tải dữ liệu quốc gia:", err)
+        );
+    }
 
       function openCountryPanel(countryName, countryCode) {
         loadCountryData(countryName, countryCode);
@@ -838,8 +939,8 @@
       // Xử lý nút dự báo (giữ nguyên)
       const forecastBtn = document.getElementById("hp_btn_forecast");
       forecastBtn.addEventListener("click", () => {
-        alert("Mở Frame 2: Popup chọn năm dự báo (Tính năng đang phát triển)");
-      });
+      window.location.href = "/forecast-modal";
+        });
 
       // Xuất dữ liệu (mock)
       document
