@@ -156,7 +156,7 @@ class ARIMAModel:
                               q_list,
                               min_train_periods: int = 15,
                               horizon: int = 1,
-                              step: int = 1,
+                              step: int = 6,
                               alpha: float = 0.10):
 
         results = []
@@ -219,7 +219,14 @@ class ARIMAModel:
     # 6. PLOT FORECAST
     # ==================================================
 
-    def plot_forecast(self, p, d, q, steps: int = 5):
+    def plot_forecast(self, p: int, d: int, q: int, steps: int = 5):
+        """
+        Visualization gồm:
+        - Observed data points
+        - Historical line
+        - Forecast line
+        - Forecast confidence interval
+        """
 
         model = ARIMA(self.series, order=(p, d, q))
         result = model.fit()
@@ -227,7 +234,7 @@ class ARIMAModel:
         forecast_res = result.get_forecast(steps=steps)
         forecast_df = forecast_res.summary_frame(alpha=0.05)
 
-        # Nếu có cột Year thì dùng Year làm trục x
+        # X-axis
         if "Year" in self.df.columns:
             historical_x = self.df["Year"].values
             last_year = historical_x[-1]
@@ -236,28 +243,51 @@ class ARIMAModel:
             historical_x = np.arange(len(self.series))
             forecast_x = np.arange(len(self.series), len(self.series) + steps)
 
-        plt.figure(figsize=(10, 5))
+        historical_y = self.series.values
 
-        # Historical
-        plt.plot(historical_x,
-                 self.series.values,
-                 label="Historical Data")
+        plt.figure(figsize=(12, 6))
 
-        # Forecast mean
-        plt.plot(forecast_x,
-                 forecast_df["mean"].values,
-                 label="Forecast")
+        # Observed data points
+        plt.scatter(
+            historical_x,
+            historical_y,
+            color="black",
+            s=25,
+            label="Observed data points",
+            zorder=3
+        )
 
-        # Confidence interval
+        # Historical line
+        plt.plot(
+            historical_x,
+            historical_y,
+            linewidth=2
+        )
+
+        # Forecast line
+        # Forecast line (nối với điểm cuối historical)
+        extended_x = np.concatenate(([historical_x[-1]], forecast_x))
+        extended_y = np.concatenate(([historical_y[-1]], forecast_df["mean"].values))
+
+        plt.plot(
+            extended_x,
+            extended_y,
+            linewidth=2,
+            label="Forecast"
+        )
+
+        # Forecast confidence interval
         plt.fill_between(
             forecast_x,
             forecast_df["mean_ci_lower"].values,
             forecast_df["mean_ci_upper"].values,
-            alpha=0.2
+            alpha=0.6,
+            label="Forecast Confidence Interval"
         )
 
-        plt.title(f"ARIMA({p},{d},{q}) Forecast")
+        plt.title("Mortality Rate Forecast")
+        plt.xlabel("Year")
+        plt.ylabel("Mortality Rate")
         plt.legend()
         plt.tight_layout()
         plt.show()
-
