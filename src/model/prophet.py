@@ -241,7 +241,7 @@ class ProphetModel:
     # ==================================================
 
     def prophet_forecast(self,
-                         steps: int = 5,
+                         steps: int = 6,
                          holiday_years=None,
                          **prophet_params):
 
@@ -267,8 +267,8 @@ class ProphetModel:
         )
 
         forecast = model.predict(future)
-
-        return forecast.tail(steps)
+        df= forecast.tail(steps)[['ds', 'yhat', 'yhat_lower', 'yhat_upper']]
+        return df
 
     def run_pipeline_prophet(self,
                              param_grid: dict,
@@ -429,82 +429,72 @@ class ProphetModel:
         forecast_future = forecast.tail(steps)
         historical_df = forecast.iloc[:-steps]
 
+        # ====== PLOT (reworked) ======
         plt.figure(figsize=(12, 6))
+        ax = plt.gca()
 
-        # ====================================
-        # 1. Observed data points
-        # ====================================
-        plt.scatter(
+        # 1) Uncertainty interval toàn bộ (nhạt, liền mạch)
+        ax.fill_between(
+            forecast["ds"],
+            forecast["yhat_lower"],
+            forecast["yhat_upper"],
+            alpha=0.12,
+            label="Uncertainty interval",
+            zorder=1,
+        )
+
+        # 2) Historical fitted line (yhat trên lịch sử)
+        ax.plot(
+            historical_df["ds"],
+            historical_df["yhat"],
+            linewidth=2,
+            label="Historical fitted",
+            zorder=2,
+        )
+
+        # 3) Forecast line nối mượt từ yhat lịch sử cuối (không nối từ y thật để tránh gãy)
+        last_hist_ds = historical_df["ds"].iloc[-1]
+        last_hist_yhat = historical_df["yhat"].iloc[-1]
+
+        extended_x = pd.concat([pd.Series([last_hist_ds]), forecast_future["ds"]], ignore_index=True)
+        extended_y = pd.concat([pd.Series([last_hist_yhat]), forecast_future["yhat"]], ignore_index=True)
+
+        ax.plot(
+            extended_x,
+            extended_y,
+            linewidth=2,
+            label="Forecast",
+            zorder=3,
+        )
+
+        # 4) Forecast confidence interval (đậm hơn thật)
+        ax.fill_between(
+            forecast_future["ds"],
+            forecast_future["yhat_lower"],
+            forecast_future["yhat_upper"],
+            alpha=0.35,  # <-- đậm hơn interval nền
+            label="Forecast confidence interval",
+            zorder=2,
+        )
+
+        # 5) Observed points (vẽ sau cùng cho nổi lên)
+        ax.scatter(
             df_p["ds"],
             df_p["y"],
             color="black",
             s=25,
-            label="Observed data points",
-            zorder=3
+            label="Observed",
+            zorder=4,
         )
 
-        # ====================================
-        # 2. Historical fitted line
-        # ====================================
-        plt.plot(
-            historical_df["ds"],
-            historical_df["yhat"],
-            linewidth=2
-        )
+        # 6) Formatting + legend dedupe
+        ax.set_title("Mortality Rate Forecast")
+        ax.set_xlabel("Year")
+        ax.set_ylabel("Mortality Rate")
 
-        # ====================================
-        # 3. Continuous uncertainty interval
-        # ====================================
-        # Vẽ toàn bộ trước (liền mạch)
-        plt.fill_between(
-            forecast["ds"],
-            forecast["yhat_lower"],
-            forecast["yhat_upper"],
-            alpha=0.15,
-            label="Uncertainty interval"
-        )
-
-        # ====================================
-        # 4. Forecast line (nối từ observed cuối)
-        # ====================================
-        extended_x = pd.concat([
-            df_p["ds"].iloc[[-1]],
-            forecast_future["ds"]
-        ])
-
-        extended_y = pd.concat([
-            df_p["y"].iloc[[-1]],
-            forecast_future["yhat"]
-        ])
-
-        plt.plot(
-            extended_x,
-            extended_y,
-            linewidth=2,
-            label="Forecast"
-        )
-
-        # ====================================
-        # 5. Forecast confidence interval (đậm hơn)
-        # ====================================
-        plt.fill_between(
-            forecast_future["ds"],
-            forecast_future["yhat_lower"],
-            forecast_future["yhat_upper"],
-            alpha=0.4,
-            label="Forecast Confidence Interval"
-        )
-
-        # ====================================
-        # 6. Formatting
-        # ====================================
-        plt.title("Mortality Rate Forecast")
-        plt.xlabel("Year")
-        plt.ylabel("Mortality Rate")
-
-        handles, labels = plt.gca().get_legend_handles_labels()
+        handles, labels = ax.get_legend_handles_labels()
         by_label = dict(zip(labels, handles))
-        plt.legend(by_label.values(), by_label.keys())
+        ax.legend(by_label.values(), by_label.keys())
 
         plt.tight_layout()
         plt.show()
