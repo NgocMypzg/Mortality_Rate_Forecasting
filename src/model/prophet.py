@@ -498,3 +498,78 @@ class ProphetModel:
 
         plt.tight_layout()
         plt.show()
+
+    # ==================================================
+    # 7. POST-PROCESSING & BENCHMARKS
+    # ==================================================
+
+    def process_and_print_forecast(self, forecast_df):
+        """
+        Xử lý yhat_lower < 0 thành 0 và in bảng kết quả.
+        """
+        df_cleaned = forecast_df.copy()
+        # Chuyển các giá trị âm ở yhat_lower về 0
+        df_cleaned['yhat_lower'] = df_cleaned['yhat_lower'].clip(lower=0)
+
+        # In bảng kết quả giống format yêu cầu
+        print("\n Mortality Rate Forecast (2025-2030) - cắt âm ")
+        pd.options.display.max_columns = None
+        print(df_cleaned[['ds', 'yhat', 'yhat_lower', 'yhat_upper']])
+        return df_cleaned
+
+    # ==================================================
+    # 8. BENCHMARK STRATEGY 1: MEAN COMPARISON
+    # ==================================================
+    def evaluate_benchmark_mean(self, forecast_df):
+        """
+        Benchmark Strategy 1: So sánh giá trị trung bình 2025-2030 với lịch sử.
+        """
+        # 1. Tính toán lịch sử (toàn bộ dữ liệu train)
+        historical_mean = self.df[self.value_col].mean()
+        print(f"Historical Mean Mortality Rate: {historical_mean:.4f}")
+
+        # 2. Lọc dữ liệu dự báo 2025 - 2030
+        # Đảm bảo ds là datetime để lọc theo năm
+        forecast_df['ds'] = pd.to_datetime(forecast_df['ds'])
+        forecast_25_30 = forecast_df[(forecast_df['ds'].dt.year >= 2025) & (forecast_df['ds'].dt.year <= 2030)]
+
+        forecast_mean = forecast_25_30['yhat'].mean()
+        print(f"Forecast Mean Mortality Rate (2025-2030): {forecast_mean:.4f}")
+
+        # 3. Ngưỡng cắt giảm
+        reduction_25 = historical_mean * 0.75
+        reduction_50 = historical_mean * 0.50
+        print(f"25% Reduction Threshold (Target <= {reduction_25:.4f})")
+        print(f"50% Reduction Threshold (Target <= {reduction_50:.4f})")
+
+        # 4. Kiểm tra
+        print(f"Yes: 25% reduction" if forecast_mean <= reduction_25 else "No: 25% reduction")
+        print(f"Yes: 50% reduction" if forecast_mean <= reduction_50 else "No: 50% reduction")
+
+    # ==================================================
+    # 9.Benchmark Strategy 2: So sánh tốc độ thay đổi hàng năm (YoY).
+    # ==================================================
+    def evaluate_benchmark_yoy(self, forecast_df):
+        """
+        Benchmark Strategy 2: So sánh tốc độ thay đổi hàng năm (YoY).
+        Chỉ in Benchmark và Average Forecast, KHÔNG CÓ kết luận.
+        """
+        # 1. Benchmark lịch sử: Trung bình thay đổi hàng năm
+        hist_yoy_change = self.df[self.value_col].diff().dropna().mean()
+        print(f"Historical Average YoY Change (Benchmark): {hist_yoy_change:.6f}")
+
+        # 2. Dự báo YoY: Tính từ 2024 để có bước nhảy sang 2025
+        f_data = forecast_df.copy()
+        f_data['ds'] = pd.to_datetime(f_data['ds'])
+
+        # Lọc lấy từ 2024 đến 2030 để tính diff
+        f_data = f_data[(f_data['ds'].dt.year >= 2024) & (f_data['ds'].dt.year <= 2030)]
+        f_data['year_on_year_change'] = f_data['yhat'].diff()
+
+        print("\nForecasted YoY Changes:")
+        print(f_data[['ds', 'yhat', 'year_on_year_change']])
+
+        # 3. Tính trung bình thay đổi của dự báo (bỏ dòng đầu vì là NaN)
+        average_forecast_change = f_data['year_on_year_change'].dropna().mean()
+        print(f"\nAverage Forecasted YoY Change: {average_forecast_change:.6f}")
+
