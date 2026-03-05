@@ -505,16 +505,27 @@ class ProphetModel:
 
     def process_and_print_forecast(self, forecast_df):
         """
-        Xử lý yhat_lower < 0 thành 0 và in bảng kết quả.
+        Xử lý yhat_lower < 0 thành 0, tính mean cho 7 dòng cuối và in kết quả.
         """
+        # Tạo bản sao để tránh SettingWithCopyWarning
         df_cleaned = forecast_df.copy()
-        # Chuyển các giá trị âm ở yhat_lower về 0
+
+        # 1. Chuyển các giá trị âm ở yhat_lower về 0
         df_cleaned['yhat_lower'] = df_cleaned['yhat_lower'].clip(lower=0)
 
-        # In bảng kết quả giống format yêu cầu
+        # 2. Tính toán mean của yhat_lower và yhat_upper cho 7 dòng cuối
+        # .iloc[-7:] lấy 7 dòng cuối cùng có trong DataFrame
+        mean_lower_last_6 = df_cleaned['yhat_lower'].iloc[-6:].mean()
+        mean_upper_last_6 = df_cleaned['yhat_upper'].iloc[-6:].mean()
+
+        # 3. In bảng kết quả giống format yêu cầu
         print("\n Mortality Rate Forecast (2025-2030) - cắt âm ")
         pd.options.display.max_columns = None
         print(df_cleaned[['ds', 'yhat', 'yhat_lower', 'yhat_upper']])
+
+        # 4. In thêm giá trị trung bình CI theo yêu cầu của bạn
+        print(f"Mean yhat_lower (last 6): {mean_lower_last_6:.6f}")
+        print(f"Mean yhat_upper (last 6): {mean_upper_last_6:.6f}")
         return df_cleaned
 
     # ==================================================
