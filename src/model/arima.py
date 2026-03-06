@@ -292,3 +292,73 @@ class ARIMAModel:
         plt.legend()
         plt.tight_layout()
         plt.show()
+
+    # ==================================================
+    # 7. ARIMA POST-PROCESSING
+    # ==================================================
+
+    def arima_post_process(self, forecast_df):
+        """
+        Xử lý cắt âm cận dưới (mean_ci_lower) và in bảng kết quả ARIMA.
+        """
+        df_cleaned = forecast_df.copy()
+        # Chuyển các giá trị âm ở mean_ci_lower về 0
+        df_cleaned['mean_ci_lower'] = df_cleaned['mean_ci_lower'].clip(lower=0)
+
+        print("\n Mortality Rate Forecast (2025-2030) - ARIMA Cắt Âm ")
+        pd.options.display.max_columns = None
+        # ARIMA dùng: mean, mean_ci_lower, mean_ci_upper
+        print(df_cleaned[['mean', 'mean_ci_lower', 'mean_ci_upper']])
+        return df_cleaned
+
+    # ==================================================
+    # 8. ARIMA BENCHMARK 1: MEAN
+    # ==================================================
+    def arima_mean_strategy(self, forecast_df):
+        """
+        So sánh giá trị trung bình 2025-2030 (ARIMA) với lịch sử.
+        """
+        # 1. Tính toán lịch sử
+        historical_mean = self.df[self.value_col].mean()
+        print(f"Historical Mean Mortality Rate: {historical_mean:.4f}")
+
+        # 2. Lấy trung bình từ cột 'mean' của ARIMA
+        forecast_mean = forecast_df['mean'].mean()
+        print(f"Forecast Mean Mortality Rate (2025-2030): {forecast_mean:.4f}")
+
+        # 3. Ngưỡng cắt giảm
+        r25 = historical_mean * 0.75
+        r50 = historical_mean * 0.50
+        print(f"25% Reduction Threshold (Target <= {r25:.4f})")
+        print(f"50% Reduction Threshold (Target <= {r50:.4f})")
+
+        # 4. Kiểm tra
+        print(f"Yes: 25% reduction" if forecast_mean <= r25 else "No: 25% reduction")
+        print(f"Yes: 50% reduction" if forecast_mean <= r50 else "No: 50% reduction")
+
+    # ==================================================
+    # 9. ARIMA BENCHMARK 2: YoY
+    # ==================================================
+    def arima_yoy_strategy(self, forecast_df):
+        """
+        So sánh tốc độ thay đổi hàng năm (YoY) cho ARIMA.
+        """
+        # 1. Benchmark lịch sử
+        hist_yoy_change = self.df[self.value_col].diff().dropna().mean()
+        print(f"Historical Average YoY Change (Benchmark): {hist_yoy_change:.6f}")
+
+        # 2. Dự báo YoY: Nối điểm cuối lịch sử vào đầu để tính diff chuẩn
+        last_val = self.df[self.value_col].iloc[-1]
+        combined = pd.concat([pd.Series([last_val]), forecast_df['mean']], ignore_index=True)
+        f_yoy_changes = combined.diff().dropna()
+
+        print("\nForecasted YoY Changes (ARIMA):")
+        yoy_df = pd.DataFrame({
+            'mean': forecast_df['mean'].values,
+            'year_on_year_change': f_yoy_changes.values
+        }, index=forecast_df.index)
+        print(yoy_df)
+
+        # 3. In trung bình thay đổi dự báo
+        avg_f_change = f_yoy_changes.mean()
+        print(f"\nAverage Forecasted YoY Change: {avg_f_change:.6f}")
