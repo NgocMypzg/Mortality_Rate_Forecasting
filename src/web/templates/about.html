@@ -1,388 +1,364 @@
 <!doctype html>
-
 <html lang="vi">
   <head>
     <meta charset="utf-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>SDG Forecast - Dự báo tỷ lệ tử vong do thảm họa</title>
-    <!-- Google Fonts: Crimson Pro -->
-    <link href="https://fonts.googleapis.com" rel="preconnect" />
-    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Về dự án Dự báo SDG 11.5</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&amp;display=swap"
+      href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&display=swap"
       rel="stylesheet"
     />
-    <!-- Font Awesome -->
+
+    <!-- Icons -->
     <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
       rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+      referrerpolicy="no-referrer"
     />
-    <!-- Tailwind CSS v3 -->
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         theme: {
           extend: {
             colors: {
-              "abyss-blue": "#0a1c2c",
-              "deep-teal": "#0f3b4f",
-              "gold-primary": "#d8a24a",
-              "gold-dark": "#b37b3a",
-              "emerald-dark": "#145a5a",
-              "surface-stone": "#1c2c3a",
-              "text-light": "#efe6d8",
-              "text-gold": "#f0c674",
+              navy: "#071826",
+              navy2: "#06131f",
+              panel: "rgba(12, 36, 54, .72)",
+              panel2: "rgba(10, 28, 44, .78)",
+              line: "rgba(185, 214, 235, .22)",
+              gold: "#d3a24d",
+              gold2: "#b9853f",
+              text: "#e8dfcf",
+              muted: "rgba(232, 223, 207, .72)",
             },
             fontFamily: {
               serif: ["Crimson Pro", "serif"],
+            },
+            boxShadow: {
+              glow:
+                "0 0 0 1px rgba(211,162,77,.55), 0 18px 40px rgba(0,0,0,.55)",
             },
           },
         },
       };
     </script>
-    <style data-purpose="custom-fantasy-styles">
+
+    <style>
+      :root {
+        color-scheme: dark;
+      }
       body {
-        background-color: #0a141f;
-        background-image: radial-gradient(
-          circle at 30% 20%,
-          #1c3f4f 0%,
-          #07121f 90%
-        );
-        color: #efe6d8;
         font-family: "Crimson Pro", serif;
+        background: radial-gradient(
+            900px 500px at 52% 5%,
+            rgba(50, 110, 140, 0.3),
+            transparent 60%
+          ),
+          radial-gradient(
+            700px 420px at 22% 35%,
+            rgba(40, 90, 120, 0.22),
+            transparent 62%
+          ),
+          radial-gradient(
+            700px 420px at 80% 65%,
+            rgba(32, 80, 110, 0.18),
+            transparent 58%
+          ),
+          linear-gradient(180deg, #071826, #04101a);
+        color: #e8dfcf;
       }
-
-      .fantasy-border {
-        border: 2px solid #d8a24a;
-        border-radius: 40px 10px 40px 10px;
-        box-shadow:
-          0 10px 15px -5px rgba(0, 0, 0, 0.7),
-          0 0 0 1px #d8a24a;
+      .gold-ring {
+        background: radial-gradient(
+            circle at 50% 55%,
+            rgba(12, 36, 54, 1) 0 58%,
+            rgba(12, 36, 54, 0) 59%
+          ),
+          radial-gradient(
+            circle at 50% 50%,
+            rgba(211, 162, 77, 0.75),
+            rgba(211, 162, 77, 0) 65%
+          );
       }
-
-      .btn-fantasy {
-        background: linear-gradient(145deg, #d8a24a, #b37b3a);
-        color: #0a1c2c;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        font-weight: bold;
-        transition: all 0.3s ease;
-        border-radius: 30px 8px 30px 8px;
+      .panel-border {
+        border: 1px solid rgba(185, 214, 235, 0.24);
+        box-shadow: 0 0 0 1px rgba(211, 162, 77, 0.25) inset,
+          0 18px 40px rgba(0, 0, 0, 0.45);
       }
-
-      .btn-fantasy:hover {
-        box-shadow: 0 0 20px #f0c674;
-        transform: translateY(-2px);
+      .panel-inner {
+        background: linear-gradient(
+          180deg,
+          rgba(12, 36, 54, 0.76),
+          rgba(8, 24, 38, 0.72)
+        );
       }
-
-      .map-container {
-        background: rgba(15, 59, 79, 0.2);
-        border: 1px solid rgba(216, 162, 74, 0.3);
-        position: relative;
+      .divider {
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(211, 162, 77, 0.65),
+          transparent
+        );
+      }
+      .accordion-btn[aria-expanded="true"] i {
+        transform: rotate(180deg);
+      }
+      .accordion-content {
+        display: grid;
+        grid-template-rows: 0fr;
+        transition: grid-template-rows 0.24s ease;
+      }
+      .accordion-content > div {
         overflow: hidden;
       }
-
-      /* Range slider customization */
-      input[type="range"] {
-        -webkit-appearance: none;
-        background: transparent;
+      .accordion-content[data-open="true"] {
+        grid-template-rows: 1fr;
       }
-      input[type="range"]::-webkit-slider-runnable-track {
-        width: 100%;
-        height: 8px;
-        background: #1c2c3a;
-        border: 1px solid #d8a24a;
-        border-radius: 4px;
+      .link-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        border-radius: 999px;
+        border: 1px solid rgba(211, 162, 77, 0.35);
+        background: rgba(10, 28, 44, 0.55);
       }
-      input[type="range"]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        height: 24px;
-        width: 24px;
-        border-radius: 50%;
-        background: #d8a24a;
-        cursor: pointer;
-        margin-top: -9px;
-        box-shadow: 0 0 10px #f0c674;
-        border: 2px solid #efe6d8;
+      .link-chip:hover {
+        border-color: rgba(211, 162, 77, 0.65);
+        box-shadow: 0 0 18px rgba(211, 162, 77, 0.18);
       }
     </style>
   </head>
-  <body class="min-h-screen flex flex-col">
-    <!-- BEGIN: MainHeader -->
-    <header class="p-4 lg:px-8 z-50">
-      <nav
-        class="max-w-7xl mx-auto flex items-center justify-between bg-surface-stone/80 backdrop-blur-md border-2 border-gold-primary rounded-full px-8 py-3 shadow-2xl"
-      >
-        <div class="flex items-center gap-2">
-          <span
-            class="text-3xl text-gold-primary drop-shadow-[0_0_8px_gold] font-bold tracking-widest"
-            >🌪️ SDG·FORECAST</span
-          >
-        </div>
+
+  <body class="min-h-screen">
+    <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+      <!-- Hero -->
+      <section class="text-center">
         <div
-          class="hidden md:flex items-center gap-8 font-semibold uppercase tracking-wider text-sm"
-        >
-          <a class="hover:text-gold-primary transition-colors" href="#"
-            >Trang chủ</a
-          >
-          <a class="hover:text-gold-primary transition-colors" href="#"
-            >Về dự án</a
-          >
-          <a class="hover:text-gold-primary transition-colors" href="#"
-            >SDG 11.5</a
-          >
-          <a class="btn-fantasy px-6 py-2" href="#">Dự báo ngay</a>
-        </div>
-        <button class="md:hidden text-gold-primary text-2xl">
-          <i class="fas fa-bars"></i>
-        </button>
-      </nav>
-    </header>
-    <!-- END: MainHeader -->
-    <!-- BEGIN: MainContent -->
-    <main class="flex-grow relative flex flex-col p-4 lg:p-8">
-      <!-- BEGIN: MapArea -->
-      <section
-        class="map-container flex-grow rounded-3xl relative overflow-hidden flex items-center justify-center"
-        data-purpose="world-map-container"
-        id="hp_map_world"
-      >
-        <!-- Mock Map Representation -->
-        <div
-          class="absolute inset-0 opacity-40 bg-[url('https://placehold.co/1920x1080/0a1c2c/efe6d8?text=World+Map+Interface')] bg-cover bg-center"
-        ></div>
-        <!-- Simulated World Map Polygons (Visual Mockup) -->
-        <svg
-          class="w-full h-full max-w-5xl opacity-80"
-          viewbox="0 0 1000 500"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            class="cursor-pointer hover:fill-gold-primary transition-colors"
-            d="M200,100 L250,120 L240,150 L180,140 Z"
-            fill="#145a5a"
-          ></path>
-          <path
-            class="cursor-pointer hover:fill-gold-primary transition-colors"
-            d="M700,300 L750,320 L740,380 L680,360 Z"
-            fill="#d8a24a"
-          ></path>
-          <path
-            class="cursor-pointer hover:fill-gold-primary transition-colors"
-            d="M800,250 L830,260 L825,290 L790,280 Z"
-            fill="#0f3b4f"
-          ></path>
-          <!-- Vietnam Highlight -->
-          <path
-            class="cursor-pointer hover:fill-gold-primary transition-colors stroke-gold-primary stroke-2"
-            d="M780,240 L790,230 L795,250 L785,260 Z"
-            fill="#e67e22"
-            id="vietnam_path"
-          ></path>
-        </svg>
-        <!-- BEGIN: Tooltip -->
-        <div
-          class="absolute top-1/2 left-[78%] -translate-x-1/2 -translate-y-1/2 z-40"
-          data-purpose="country-tooltip"
-          id="hp_tooltip"
+          class="mx-auto w-20 h-20 rounded-full gold-ring flex items-center justify-center"
         >
           <div
-            class="bg-surface-stone border border-gold-primary p-3 rounded-tr-2xl rounded-bl-2xl shadow-2xl min-w-[180px]"
+            class="w-14 h-14 rounded-full bg-panel2 flex items-center justify-center panel-border"
           >
-            <div
-              class="text-gold-primary font-bold border-b border-gold-primary/30 pb-1 mb-2"
-            >
-              🇻🇳 Việt Nam
-            </div>
-            <div class="text-xs space-y-1">
-              <div class="flex justify-between">
-                <span>Năm:</span>
-                <span class="font-semibold text-white">2024</span>
-              </div>
-              <div class="flex justify-between">
-                <span>Tỷ lệ tử vong:</span>
-                <span class="font-semibold text-white">0.32/100k</span>
-              </div>
-            </div>
-            <div class="mt-2 text-[10px] italic text-gold-dark">
-              Click để xem chi tiết
-            </div>
+            <i class="fa-solid fa-tornado text-gold text-xl"></i>
           </div>
         </div>
-        <!-- END: Tooltip -->
-        <!-- BEGIN: FloatingControls -->
-        <div class="absolute top-6 left-6 flex flex-col gap-4">
-          <!-- Mode Indicator -->
-          <div
-            class="bg-surface-stone/90 border border-gold-primary px-4 py-2 rounded-full flex items-center gap-3 shadow-lg"
-            id="hp_txt_mode_indicator"
-          >
-            <div
-              class="w-2 h-2 rounded-full bg-emerald-dark animate-pulse shadow-[0_0_8px_#145a5a]"
-            ></div>
-            <span
-              class="text-sm font-semibold uppercase tracking-widest text-text-gold"
-              >Chế độ lịch sử</span
-            >
-          </div>
-          <!-- Filter Dropdown -->
-          <div
-            class="bg-surface-stone/90 border border-gold-primary p-4 rounded-2xl shadow-lg w-64"
-          >
-            <label
-              class="block text-xs uppercase tracking-tighter mb-2 text-gold-dark"
-              >Loại thảm họa</label
-            >
-            <select
-              class="w-full bg-deep-teal border-gold-primary/50 rounded-lg text-sm text-text-light focus:ring-gold-primary focus:border-gold-primary"
-              id="hp_dropdown_disaster_type"
-            >
-              <option>Tất cả thảm họa</option>
-              <option>Lũ lụt (Flood)</option>
-              <option>Bão (Storm)</option>
-              <option>Động đất (Earthquake)</option>
-              <option>Hạn hán (Drought)</option>
-            </select>
-          </div>
-          <!-- Legend -->
-          <div
-            class="bg-surface-stone/90 border border-gold-primary p-4 rounded-2xl shadow-lg"
-            id="hp_legend"
-          >
-            <h4 class="text-xs uppercase font-bold text-gold-primary mb-3">
-              Tỷ lệ tử vong (/100k)
-            </h4>
-            <div class="space-y-2">
-              <div class="flex items-center gap-3">
-                <span
-                  class="w-4 h-4 rounded bg-[#0a3a4a] border border-white/20"
-                ></span>
-                <span class="text-xs">0.00 - 0.50</span>
-              </div>
-              <div class="flex items-center gap-3">
-                <span
-                  class="w-4 h-4 rounded bg-[#145a5a] border border-white/20"
-                ></span>
-                <span class="text-xs">0.51 - 2.00</span>
-              </div>
-              <div class="flex items-center gap-3">
-                <span
-                  class="w-4 h-4 rounded bg-[#e67e22] border border-white/20"
-                ></span>
-                <span class="text-xs">2.01 - 5.00</span>
-              </div>
-              <div class="flex items-center gap-3">
-                <span
-                  class="w-4 h-4 rounded bg-[#b37b3a] border border-white/20"
-                ></span>
-                <span class="text-xs">&gt; 5.00</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!-- END: FloatingControls -->
-        <!-- BEGIN: ForecastAction -->
-        <div class="absolute bottom-6 right-6 flex flex-col items-end gap-3">
-          <button
-            class="btn-fantasy px-8 py-4 text-lg flex items-center gap-3 group"
-            id="hp_btn_forecast"
-          >
-            <span>Kích hoạt dự báo</span>
-            <i
-              class="fas fa-magic transition-transform group-hover:rotate-45"
-            ></i>
-          </button>
-          <button
-            class="hidden text-xs text-gold-primary hover:underline uppercase tracking-widest"
-            id="hp_btn_reset_forecast"
-          >
-            <i class="fas fa-undo mr-1"></i> Quay lại lịch sử
-          </button>
-        </div>
-        <!-- END: ForecastAction -->
-      </section>
-      <!-- END: MapArea -->
-      <!-- BEGIN: YearControl -->
-      <section
-        class="mt-8 bg-surface-stone border-2 border-gold-primary rounded-2xl p-6 shadow-2xl"
-      >
-        <div class="flex flex-col md:flex-row items-center gap-8">
-          <div class="text-center md:text-left min-w-[120px]">
-            <span
-              class="text-4xl font-bold text-gold-primary block tracking-tighter"
-              id="hp_txt_current_year"
-              >2024</span
-            >
-            <span class="text-[10px] uppercase tracking-[0.2em] text-gold-dark"
-              >Năm hiển thị</span
-            >
-          </div>
-          <div class="flex-grow w-full">
-            <input
-              class="w-full h-2 cursor-pointer"
-              id="hp_slider_year"
-              max="2024"
-              min="2000"
-              type="range"
-              value="2024"
-            />
-            <div
-              class="flex justify-between mt-2 text-[10px] text-gold-dark font-semibold"
-            >
-              <span>2000</span>
-              <span>2005</span>
-              <span>2010</span>
-              <span>2015</span>
-              <span>2020</span>
-              <span>2024</span>
-            </div>
-          </div>
-          <div
-            class="hidden lg:flex items-center gap-4 text-gold-dark/50 border-l border-gold-primary/30 pl-8 italic text-sm"
-          >
-            Sử dụng thanh trượt để du hành qua các mốc thời gian lịch sử thảm
-            họa.
-          </div>
-        </div>
-      </section>
-      <!-- END: YearControl -->
-    </main>
-    <!-- END: MainContent -->
-    <!-- BEGIN: Footer -->
-    <footer
-      class="p-6 text-center border-t border-gold-primary/20 bg-abyss-blue"
-    >
-      <div
-        class="flex flex-col md:flex-row justify-between items-center max-w-7xl mx-auto gap-4"
-      >
-        <p class="text-[10px] uppercase tracking-widest text-gold-dark/70">
-          © 2026 · Hệ thống giám sát SDG 11.5 · Công nghệ ARIMA &amp; Facebook
-          Prophet
+
+        <h1
+          class="mt-6 text-3xl sm:text-4xl font-bold tracking-wide text-gold"
+        >
+          Về dự án Dự báo SDG 11.5
+        </h1>
+        <p class="mt-2 text-sm sm:text-base text-muted italic">
+          Giám sát rủi ro thiên tai qua các mô hình chuỗi thời gian
         </p>
-        <div class="flex gap-4 text-gold-dark/70 text-sm">
-          <a class="hover:text-gold-primary" href="#">Điều khoản</a>
-          <a class="hover:text-gold-primary" href="#">Dữ liệu</a>
-          <a class="hover:text-gold-primary" href="#">Liên hệ</a>
+      </section>
+
+      <!-- Section: Mục tiêu & Bối cảnh -->
+      <section class="mt-10 sm:mt-12">
+        <div class="panel-border rounded-3xl panel-inner px-6 sm:px-10 py-7 sm:py-9">
+          <div class="flex items-center gap-3">
+            <span class="text-gold text-xl"><i class="fa-solid fa-scroll"></i></span>
+            <h2 class="text-xl sm:text-2xl font-bold text-gold">
+              Mục tiêu &amp; Bối cảnh
+            </h2>
+          </div>
+
+          <div class="mt-4 space-y-4 text-[15px] sm:text-[16px] leading-7 text-text">
+            <p>
+              Dự án
+              <span class="text-gold font-semibold"
+                >“Dự báo tỷ lệ tử vong do thảm họa tự nhiên phục vụ giám sát Mục tiêu
+                Phát triển Bền vững”</span
+              >
+              tập trung vào chỉ số
+              <span class="text-gold font-semibold">SDG 11.5</span>: giảm thiểu số
+              người chết và số người bị ảnh hưởng do thiên tai vào năm 2030.
+            </p>
+
+            <p>Chúng tôi thực hiện đánh giá dự báo tỷ lệ tử vong ở cấp độ quốc gia và khu vực, so sánh giữa hai phương pháp:</p>
+
+            <div class="space-y-2 pl-1">
+              <p>
+                <span class="text-gold font-semibold">ARIMA:</span>
+                Mô hình thống kê truyền thống, hiệu quả với các chuỗi dữ liệu có xu hướng
+                ổn định và tính dừng.
+              </p>
+              <p>
+                <span class="text-gold font-semibold">Facebook Prophet:</span>
+                Mô hình hiện đại dựa trên cấu trúc cộng tính, linh hoạt trong việc xử lý
+                các giá trị ngoại lai cực đoan và dữ liệu thiếu hụt — những đặc tính điển hình
+                của dữ liệu thiên tai.
+              </p>
+            </div>
+
+            <p class="text-muted">
+              Thông qua việc chuẩn hóa tỷ lệ tử vong trên 100.000 dân, dự án cung cấp cái nhìn
+              khách quan về mức độ rủi ro giữa các quốc gia và khu vực khác nhau.
+            </p>
+          </div>
         </div>
-      </div>
-    </footer>
-    <!-- END: Footer -->
-    <!-- BEGIN: Scripts -->
-    <script data-purpose="interaction-logic">
-      // Mock interaction for the year slider
-      const yearSlider = document.getElementById("hp_slider_year");
-      const currentYearText = document.getElementById("hp_txt_current_year");
+      </section>
 
-      yearSlider.addEventListener("input", (e) => {
-        currentYearText.textContent = e.target.value;
-      });
+      <!-- Section: Nguồn Dữ Liệu -->
+      <section class="mt-8 sm:mt-10">
+        <div class="panel-border rounded-3xl panel-inner px-6 sm:px-10 py-7 sm:py-9">
+          <div class="flex items-center gap-3">
+            <span class="text-gold text-xl"><i class="fa-solid fa-database"></i></span>
+            <h2 class="text-xl sm:text-2xl font-bold text-gold">Nguồn Dữ Liệu</h2>
+          </div>
 
-      // Mock open forecast modal
-      const forecastBtn = document.getElementById("hp_btn_forecast");
-      forecastBtn.addEventListener("click", () => {
-        alert("Mở Frame 2: Popup chọn năm dự báo (Tính năng đang phát triển)");
+          <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+            <article class="rounded-2xl bg-[rgba(6,19,31,.55)] panel-border px-6 py-5">
+              <h3 class="text-gold font-bold text-lg">EM-DAT</h3>
+              <p class="mt-2 text-sm leading-6 text-muted">
+                Cơ sở dữ liệu sự kiện khẩn cấp quốc tế, cung cấp dữ liệu về các thảm họa
+                thiên nhiên từ năm 1900 đến nay.
+              </p>
+              <a class="mt-4 link-chip text-sm text-text inline-flex" href="https://www.emdat.be/" aria-label="Truy cập EM-DAT">
+                <i class="fa-solid fa-arrow-up-right-from-square text-gold"></i>
+                Truy cập EM-DAT
+              </a>
+            </article>
+
+            <article class="rounded-2xl bg-[rgba(6,19,31,.55)] panel-border px-6 py-5">
+              <h3 class="text-gold font-bold text-lg">World Bank</h3>
+              <p class="mt-2 text-sm leading-6 text-muted">
+                Nguồn dữ liệu dân số toàn cầu dùng để chuẩn hóa tỷ lệ tử vong, đảm bảo tính
+                so sánh giữa các quốc gia.
+              </p>
+              <a class="mt-4 link-chip text-sm text-text inline-flex" href="https://www.worldbank.org/ext/en/home" aria-label="Truy cập World Bank">
+                <i class="fa-solid fa-arrow-up-right-from-square text-gold"></i>
+                Truy cập World Bank
+              </a>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section: FAQ -->
+      <section class="mt-8 sm:mt-10">
+        <div class="panel-border rounded-3xl panel-inner px-6 sm:px-10 py-7 sm:py-9">
+          <div class="flex items-center gap-3">
+            <span class="text-gold text-xl"><i class="fa-solid fa-circle-question"></i></span>
+            <h2 class="text-xl sm:text-2xl font-bold text-gold">Câu hỏi thường gặp</h2>
+          </div>
+
+          <div class="mt-5 divide-y divide-[rgba(185,214,235,.15)]">
+            <div class="py-4">
+              <button
+                class="accordion-btn w-full flex items-center justify-between gap-4 text-left font-semibold"
+                type="button"
+                aria-expanded="false"
+                data-accordion="btn"
+              >
+                <span>Tại sao lại chọn ARIMA và Prophet để so sánh?</span>
+                <i class="fa-solid fa-chevron-down text-gold transition-transform"></i>
+              </button>
+              <div class="accordion-content mt-3" data-accordion="content" data-open="false">
+                <div class="text-sm leading-6 text-muted">
+                  Việc so sánh là cần thiết vì hai mô hình dựa trên những giả định rất khác nhau, và kết quả thực nghiệm cho thấy chúng không mạnh ở cùng một loại dữ liệu. ARIMA cho kết quả tốt hơn ở cấp độ toàn cầu, nơi chuỗi dữ liệu đã được tổng hợp nên ổn định và gần tuyến tính hơn. Ngược lại, Prophet hoạt động hiệu quả hơn ở nhiều chuỗi cấp khu vực và quốc gia, nơi dữ liệu thể hiện rõ hơn các biến động cục bộ, xu hướng phi tuyến và điểm gãy cấu trúc. Do đó, so sánh hai mô hình không chỉ nhằm chọn mô hình tốt hơn, mà còn để xác định điều kiện dữ liệu phù hợp với từng cách tiếp cận.
+                </div>
+              </div>
+            </div>
+
+            <div class="py-4">
+              <button
+                class="accordion-btn w-full flex items-center justify-between gap-4 text-left font-semibold"
+                type="button"
+                aria-expanded="false"
+                data-accordion="btn"
+              >
+                <span>Tỷ lệ tử vong được tính như thế nào?</span>
+                <i class="fa-solid fa-chevron-down text-gold transition-transform"></i>
+              </button>
+              <div class="accordion-content mt-3" data-accordion="content" data-open="false">
+                <div class="text-sm leading-6 text-muted">
+                  Tỷ lệ được chuẩn hóa theo công thức:
+                  (Số người tử vong / Dân số) × 100.000, sử dụng dữ liệu dân số từ World Bank
+                  để đảm bảo so sánh giữa các quốc gia.
+                </div>
+              </div>
+            </div>
+
+            <div class="py-4">
+              <button
+                class="accordion-btn w-full flex items-center justify-between gap-4 text-left font-semibold"
+                type="button"
+                aria-expanded="false"
+                data-accordion="btn"
+              >
+                <span>Hiệu quả dự báo và khả năng tổng quát hóa của các mô hình có thay đổi khi quy mô phân tích thu hẹp từ toàn cầu xuống quốc gia hay không?</span>
+                <i class="fa-solid fa-chevron-down text-gold transition-transform"></i>
+              </button>
+              <div class="accordion-content mt-3" data-accordion="content" data-open="false">
+                <div class="text-sm leading-6 text-muted">
+                  Có, và đây là một trong những kết quả nổi bật nhất của nghiên cứu. Ở cấp toàn cầu, ARIMA cho sai số thấp hơn Prophet, cho thấy mô hình này tổng quát hóa tốt khi dữ liệu đã được làm mượt qua quá trình cộng gộp. Tuy nhiên, khi chuyển xuống cấp khu vực và quốc gia, Prophet vượt trội trong phần lớn trường hợp, đặc biệt tại Europe & Central Asia, East Asia & Pacific và nhiều quốc gia cụ thể. Điều này cho thấy hiệu quả mô hình không bất biến theo không gian phân tích, mà thay đổi cùng với mức độ phân rã của dữ liệu.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer / Contact -->
+      <section class="mt-10 sm:mt-12">
+        <div class="divider mb-6"></div>
+
+        <h3 class="text-center text-gold font-bold text-lg tracking-wide">
+          Liên hệ với chúng tôi
+        </h3>
+
+        <div class="mt-4 flex flex-col items-center gap-3 text-sm text-muted">
+          <div class="flex items-center gap-2">
+            <i class="fa-regular fa-envelope text-gold"></i>
+            <a class="hover:text-text" href="mypn23416@st.uel.edu.vn"
+              >mypn23416@st.uel.edu.vn</a
+            >
+          </div>
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-location-dot text-gold"></i>
+            <span>Trường Đại học Kinh tế Luật - VNU</span>
+          </div>
+
+          <div class="flex items-center gap-5 text-lg pt-1">
+            <a class="hover:text-gold" href="https://github.com/NgocMypzg/Mortality_Rate_Forecasting" aria-label="GitHub"
+              ><i class="fa-brands fa-github"></i
+            ></a>
+            <a class="hover:text-gold" href="#" aria-label="LinkedIn"
+              ><i class="fa-brands fa-linkedin"></i
+            ></a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const buttons = Array.from(document.querySelectorAll('[data-accordion="btn"]'));
+
+      function closeAll(exceptBtn) {
+        for (const btn of buttons) {
+          const wrap = btn.parentElement;
+          const content = wrap.querySelector('[data-accordion="content"]');
+          const isExcept = btn === exceptBtn;
+          btn.setAttribute("aria-expanded", String(isExcept));
+          content.dataset.open = String(isExcept);
+        }
+      }
+
+      buttons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const expanded = btn.getAttribute("aria-expanded") === "true";
+          if (expanded) closeAll(null);
+          else closeAll(btn);
+        });
       });
     </script>
-    <!-- END: Scripts -->
   </body>
 </html>
