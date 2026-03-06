@@ -305,10 +305,15 @@ class ARIMAModel:
         # Chuyển các giá trị âm ở mean_ci_lower về 0
         df_cleaned['mean_ci_lower'] = df_cleaned['mean_ci_lower'].clip(lower=0)
 
+        mean_lower_last_6 = df_cleaned['mean_ci_lower'].iloc[-6:].mean()
+        mean_upper_last_6 = df_cleaned['mean_ci_upper'].iloc[-6:].mean()
+
         print("\n Mortality Rate Forecast (2025-2030) - ARIMA Cắt Âm ")
         pd.options.display.max_columns = None
         # ARIMA dùng: mean, mean_ci_lower, mean_ci_upper
         print(df_cleaned[['mean', 'mean_ci_lower', 'mean_ci_upper']])
+        print(f"Mean mean_ci_lower (last 6): {mean_lower_last_6:.6f}")
+        print(f"Mean mean_ci_upper (last 6): {mean_upper_last_6:.6f}")
         return df_cleaned
 
     # ==================================================
