@@ -394,6 +394,7 @@ class ProphetModel:
     def plot_forecast(self,
                       steps: int = 5,
                       holiday_years=None,
+                      country_name="Viet Nam",
                       **prophet_params):
         """
         Plot gồm:
@@ -495,7 +496,7 @@ class ProphetModel:
         handles, labels = ax.get_legend_handles_labels()
         by_label = dict(zip(labels, handles))
         ax.legend(by_label.values(), by_label.keys())
-
+        ax.set_title(f"Forecast for {country_name} from 2025-2030", fontsize=16, pad=16)
         plt.tight_layout()
         plt.show()
 

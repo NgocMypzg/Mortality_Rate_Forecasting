@@ -220,7 +220,7 @@ class ARIMAModel:
     # 6. PLOT FORECAST
     # ==================================================
 
-    def plot_forecast(self, p: int, d: int, q: int, steps: int = 5):
+    def plot_forecast(self, p: int, d: int, q: int, steps: int = 5, country_name="Viet Nam"):
         """
         Visualization gồm:
         - Observed data points
@@ -286,7 +286,7 @@ class ARIMAModel:
             label="Forecast Confidence Interval"
         )
 
-        plt.title("Mortality Rate Forecast")
+        plt.title(f"Mortality Rate Forecast for {country_name} from 2025-2030")
         plt.xlabel("Year")
         plt.ylabel("Mortality Rate")
         plt.legend()
