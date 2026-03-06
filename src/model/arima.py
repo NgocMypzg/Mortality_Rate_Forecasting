@@ -53,10 +53,11 @@ class ARIMAModel:
     # 2. ACF & PACF
     # ==================================================
 
-    def plot_acf_pacf(self, lags: int = 10):
+    def plot_acf_pacf(self, lags: int = 10, d= 0):
+        y_diff = self.series.diff().dropna() if d > 0 else self.series
         fig, axes = plt.subplots(1, 2, figsize=(12, 4))
-        plot_acf(self.series, lags=lags, ax=axes[0])
-        plot_pacf(self.series, lags=lags, ax=axes[1])
+        plot_acf(y_diff, lags=lags, ax=axes[0])
+        plot_pacf(y_diff, lags=lags, ax=axes[1])
         axes[0].set_title("ACF")
         axes[1].set_title("PACF")
         plt.tight_layout()

@@ -47,8 +47,6 @@ def main():
 
     param_grid = {
         'changepoint_prior_scale': [0.05, 0.1, 0.2, 0.3, 0.5],  # Removed 0
-        'n_changepoints': [15, 20, 25],
-        'changepoint_range': [0.8, 0.9],
         'holidays_prior_scale': [10.0, 15.0]
     }
 

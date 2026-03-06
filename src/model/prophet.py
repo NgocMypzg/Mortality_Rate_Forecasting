@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from prophet import Prophet
+import prophet
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 from src.evaluation.split import expanding_splits
@@ -134,7 +134,7 @@ class ProphetModel:
             test_p = self._to_prophet(test_df)
 
             try:
-                model = Prophet(
+                model = prophet.Prophet(
                     growth="linear",
                     seasonality_mode="additive",
                     yearly_seasonality=False,
@@ -249,7 +249,7 @@ class ProphetModel:
 
         df_p = self._to_prophet(self.df)
 
-        model = Prophet(
+        model = prophet.Prophet(
             growth="linear",
             seasonality_mode="additive",
             yearly_seasonality=False,
@@ -373,7 +373,7 @@ class ProphetModel:
 
         df_p = self._to_prophet(self.df)
 
-        final_model = Prophet(
+        final_model = prophet.Prophet(
             growth="linear",
             seasonality_mode="additive",
             yearly_seasonality=False,
@@ -407,7 +407,7 @@ class ProphetModel:
         holidays = self._build_holidays(holiday_years)
         df_p = self._to_prophet(self.df)
 
-        model = Prophet(
+        model = prophet.Prophet(
             growth="linear",
             seasonality_mode="additive",
             yearly_seasonality=False,

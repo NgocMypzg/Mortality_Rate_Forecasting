@@ -200,20 +200,19 @@
         top: 0;
         right: 0;
         width: 450px;
-        height: 100%;
+        height: 100vh;                 /* dùng 100vh luôn */
         background: linear-gradient(145deg, #162f3a, #0a1f2c);
         border-left: 2px solid #d8a24a;
         box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
         z-index: 1000;
         display: flex;
         flex-direction: column;
-        transition: transform 0.3s ease-in-out;
-        transform: translateX(100%);
-      }
+          transition: transform 0.3s ease-in-out;
+          transform: translateX(100%);
+          overflow: hidden;              /* khóa scroll ở panel */
+        }
 
-      .cdp-side-panel.translate-x-0 {
-        transform: translateX(0);
-      }
+      .cdp-side-panel.translate-x-0 { transform: translateX(0); }
 
       .cdp-side-panel .header {
         padding: 1.5rem;
@@ -221,15 +220,6 @@
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-      }
-
-      .cdp-side-panel .content {
-        flex: 1;
-        overflow-y: auto;
-        padding: 1.5rem;
-        display: flex;
-        flex-direction: column;
-        gap: 2rem;
       }
 
       .cdp-side-panel .footer {
@@ -240,6 +230,32 @@
         gap: 0.75rem;
       }
 
+      /* Chỉ set flex layout khi view đang HIỂN THỊ (không hidden) */
+      #cdp_view_history:not(.hidden),
+      #cdp_view_forecast:not(.hidden) {
+        display: flex;
+        flex-direction: column;
+          flex: 1;
+          min-height: 0;
+        }
+
+      /* History scroll */
+      #cdp_view_history .content {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+      }
+
+      /* Forecast scroll (vùng giữa) */
+      #cdp_view_forecast > div.flex-1 {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+      }
       .stat-card {
         background: rgba(15, 38, 51, 0.6);
         border-left: 3px solid #d8a24a;
@@ -278,6 +294,7 @@
       .btn-fantasy-outline:hover {
         background: rgba(216, 162, 74, 0.1);
       }
+
     </style>
   </head>
   <body class="min-h-screen flex flex-col">
@@ -444,7 +461,7 @@
         class="flex flex-col md:flex-row justify-between items-center max-w-7xl mx-auto gap-4"
       >
         <p class="text-[10px] uppercase tracking-widest text-gold-dark/70">
-          © 2026 · Hệ thống giám sát SDG 11.5 · Công nghệ ARIMA & Facebook
+          © 2026 · Hệ thống giám sát SDG 11.5 · Công nghệ Facebook
           Prophet
         </p>
         <div class="flex gap-4 text-gold-dark/70 text-sm">
@@ -457,115 +474,160 @@
 
     <!-- BEGIN: CountryDetailPanel -->
     <aside class="cdp-side-panel" id="cdp_panel">
-      <div class="header">
-        <div>
-          <h1
-            class="text-3xl font-bold text-gold tracking-wide"
-            id="cdp_txt_country_name"
-          >
-            Việt Nam
-          </h1>
-          <p class="text-slate-400 text-lg" id="cdp_txt_region">
-            South-eastern Asia
+
+  <!-- ========== VIEW: HISTORY (giữ như index ban đầu) ========== -->
+  <div id="cdp_view_history">
+    <div class="header">
+      <div>
+        <h1 class="text-3xl font-bold text-gold tracking-wide" id="cdp_txt_country_name">Việt Nam</h1>
+        <p class="text-slate-400 text-lg" id="cdp_txt_region">South-eastern Asia</p>
+      </div>
+      <button class="text-slate-400 hover:text-white transition-colors" id="cdp_btn_close">
+        <i class="fa-solid fa-xmark text-2xl"></i>
+      </button>
+    </div>
+
+    <div class="content">
+      <section>
+        <div class="bg-slate-900/50 p-4 border border-slate-700 rounded-lg shadow-inner">
+          <canvas id="cdp_chart_time_series" height="250"></canvas>
+        </div>
+        <p class="text-xs text-slate-500 mt-2 italic">* Đường nét đứt biểu thị dữ liệu dự báo</p>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 hidden" id="cdp_forecast_section">
+        <div class="bg-slate-800/40 p-4 border-l-4 border-orange-500 rounded-r-lg">
+          <h3 class="text-xs uppercase text-slate-500 mb-1">
+            Dự báo năm <span id="cdp_forecast_year"></span>
+          </h3>
+          <p class="text-2xl font-bold text-orange-400" id="cdp_txt_forecast_value">
+            0.00 <span class="text-sm font-normal text-slate-400">/ 100k</span>
           </p>
         </div>
-        <button
-          class="text-slate-400 hover:text-white transition-colors"
-          id="cdp_btn_close"
-        >
-          <i class="fa-solid fa-xmark text-2xl"></i>
-        </button>
+        <div class="bg-slate-800/40 p-4 border-l-4 border-blue-500 rounded-r-lg">
+          <h3 class="text-xs uppercase text-slate-500 mb-1">KTC 80%</h3>
+          <p class="text-lg font-semibold text-blue-300" id="cdp_txt_confidence_interval">[0.00, 0.00]</p>
+        </div>
+      </section>
+
+      <section>
+        <h3 class="text-sm uppercase tracking-wider text-slate-500 mb-3">Thống kê lịch sử</h3>
+        <div class="grid grid-cols-2 gap-4" id="cdp_stats_container">
+          <div class="stat-card">
+            <p class="text-xs uppercase text-gold-dark">Trung bình</p>
+            <p class="text-2xl font-bold" id="cdp_stats_avg">0.00</p>
+          </div>
+          <div class="stat-card">
+            <p class="text-xs uppercase text-gold-dark">Cao nhất</p>
+            <p class="text-2xl font-bold" id="cdp_stats_max">0.00</p>
+          </div>
+          <div class="stat-card">
+            <p class="text-xs uppercase text-gold-dark">Thấp nhất</p>
+            <p class="text-2xl font-bold" id="cdp_stats_min">0.00</p>
+          </div>
+          <div class="stat-card">
+            <p class="text-xs uppercase text-gold-dark">Tổng số năm</p>
+            <p class="text-2xl font-bold" id="cdp_stats_years">0</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="footer">
+      <button class="flex-1 py-3 btn-fantasy btn-fantasy-primary flex items-center justify-center gap-2" id="cdp_btn_export">
+        <i class="fa-solid fa-file-export"></i> Xuất dữ liệu
+      </button>
+      <button class="px-4 py-3 btn-fantasy btn-fantasy-outline" title="Cài đặt mô hình">
+        <i class="fa-solid fa-gear"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- ========== VIEW: FORECAST (layout như country_panel.html) ========== -->
+  <div id="cdp_view_forecast" class="hidden">
+
+    <header class="p-6 border-b border-slate-700/50 flex justify-between items-start">
+      <div>
+        <h1 class="text-3xl font-bold text-gold" id="cdpF_txt_country_name">Việt Nam</h1>
+        <p class="text-slate-400 text-lg" id="cdpF_txt_region">South-eastern Asia</p>
       </div>
-      <div class="content">
-        <!-- Chart -->
-        <section>
-          <div
-            class="bg-slate-900/50 p-4 border border-slate-700 rounded-lg shadow-inner"
-          >
-            <canvas id="cdp_chart_time_series" height="250"></canvas>
-          </div>
-          <p class="text-xs text-slate-500 mt-2 italic">
-            * Đường nét đứt biểu thị dữ liệu dự báo
-          </p>
-        </section>
-        <!-- Forecast Values (ẩn nếu không có dự báo) -->
-        <section
-          class="grid grid-cols-1 gap-4 hidden"
-          id="cdp_forecast_section"
-        >
-          <div
-            class="bg-slate-800/40 p-4 border-l-4 border-orange-500 rounded-r-lg"
-          >
-            <h3 class="text-xs uppercase text-slate-500 mb-1">
-              Dự báo năm <span id="cdp_forecast_year"></span>
-            </h3>
-            <p
-              class="text-2xl font-bold text-orange-400"
-              id="cdp_txt_forecast_value"
-            >
-              0.00
-              <span class="text-sm font-normal text-slate-400">/ 100k</span>
-            </p>
-          </div>
-          <div
-            class="bg-slate-800/40 p-4 border-l-4 border-blue-500 rounded-r-lg"
-          >
-            <h3 class="text-xs uppercase text-slate-500 mb-1">KTC 80%</h3>
-            <p
-              class="text-lg font-semibold text-blue-300"
-              id="cdp_txt_confidence_interval"
-            >
-              [0.00, 0.00]
-            </p>
-          </div>
-        </section>
-        <!-- Historical Statistics -->
-        <section>
-          <h3 class="text-sm uppercase tracking-wider text-slate-500 mb-3">
-            Thống kê lịch sử
+      <button class="text-slate-400 hover:text-white" id="cdpF_btn_close">
+        <i class="fa-solid fa-xmark text-2xl"></i>
+      </button>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-6 space-y-8">
+      <section>
+        <label class="block text-sm uppercase tracking-wider text-slate-500 mb-3">Mô hình dự báo</label>
+        <div class="inline-flex rounded-md shadow-sm" id="cdpF_btn_toggle_model">
+          <button
+            type="button"
+            data-model="Prophet"
+            class="px-6 py-2 text-sm font-medium border border-gold rounded-r-lg text-gold hover:bg-gold/10"
+            id="cdpF_btn_model_prophet"
+          >Prophet</button>
+        </div>
+      </section>
+
+      <section>
+        <div class="bg-slate-900/50 p-4 border border-slate-700 rounded-lg">
+          <canvas id="cdpF_chart_time_series" height="250"></canvas>
+        </div>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 hidden" id="cdpF_forecast_section">
+        <div class="bg-slate-800/40 p-4 border-l-4 border-orange-500 rounded-r-lg">
+          <h3 class="text-xs uppercase text-slate-500 mb-1">
+            Dự báo năm <span id="cdpF_forecast_year"></span>
           </h3>
-          <div class="grid grid-cols-2 gap-4" id="cdp_stats_container">
-            <div class="stat-card">
-              <p class="text-xs uppercase text-gold-dark">Trung bình</p>
-              <p class="text-2xl font-bold" id="cdp_stats_avg">0.00</p>
-            </div>
-            <div class="stat-card">
-              <p class="text-xs uppercase text-gold-dark">Cao nhất</p>
-              <p class="text-2xl font-bold" id="cdp_stats_max">0.00</p>
-            </div>
-            <div class="stat-card">
-              <p class="text-xs uppercase text-gold-dark">Thấp nhất</p>
-              <p class="text-2xl font-bold" id="cdp_stats_min">0.00</p>
-            </div>
-            <div class="stat-card">
-              <p class="text-xs uppercase text-gold-dark">Tổng số năm</p>
-              <p class="text-2xl font-bold" id="cdp_stats_years">0</p>
-            </div>
+          <p class="text-2xl font-bold text-orange-400" id="cdpF_txt_forecast_value">
+            0.00 <span class="text-sm font-normal text-slate-400">/ 100k</span>
+          </p>
+        </div>
+        <div class="bg-slate-800/40 p-4 border-l-4 border-blue-500 rounded-r-lg">
+          <h3 class="text-xs uppercase text-slate-500 mb-1">KTC 80%</h3>
+          <p class="text-lg font-semibold text-blue-300" id="cdpF_txt_confidence_interval">[N/A, N/A]</p>
+        </div>
+      </section>
+
+      <section>
+        <h3 class="text-sm uppercase tracking-wider text-slate-500 mb-3">Thống kê lịch sử</h3>
+        <div class="bg-slate-900/30 p-4 border border-slate-800 rounded-lg text-sm">
+          <div class="flex justify-between border-b border-slate-800 pb-2 mb-2">
+            <span>Trung bình:</span><span class="font-bold text-white" id="cdpF_stats_avg">0.00</span>
           </div>
-        </section>
-      </div>
-      <div class="footer">
-        <button
-          class="flex-1 py-3 btn-fantasy btn-fantasy-primary flex items-center justify-center gap-2"
-          id="cdp_btn_export"
-        >
-          <i class="fa-solid fa-file-export"></i> Xuất dữ liệu
-        </button>
-        <button
-          class="px-4 py-3 btn-fantasy btn-fantasy-outline"
-          title="Cài đặt mô hình"
-        >
-          <i class="fa-solid fa-gear"></i>
-        </button>
-      </div>
-    </aside>
+          <div class="flex justify-between border-b border-slate-800 pb-2 mb-2">
+            <span>Cao nhất:</span><span class="font-bold text-white" id="cdpF_stats_max">0.00</span>
+          </div>
+          <div class="flex justify-between border-b border-slate-800 pb-2 mb-2">
+            <span>Thấp nhất:</span><span class="font-bold text-white" id="cdpF_stats_min">0.00</span>
+          </div>
+          <div class="flex justify-between">
+            <span>Tổng số năm huấn luyện:</span><span class="font-bold text-white" id="cdpF_stats_years">0</span>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer class="p-6 border-t border-slate-700/50 bg-slate-950/30 flex gap-3">
+      <button class="flex-1 py-3 btn-fantasy btn-fantasy-primary flex items-center justify-center gap-2" id="cdpF_btn_export">
+        <i class="fa-solid fa-file-export"></i> Xuất dữ liệu
+      </button>
+      <button class="px-4 py-3 btn-fantasy btn-fantasy-outline">
+        <i class="fa-solid fa-gear"></i>
+      </button>
+    </footer>
+  </div>
+
+</aside>
     <!-- END: CountryDetailPanel -->
 
     <!-- BEGIN: Scripts -->
     <script data-purpose="leaflet-map">
       // Khởi tạo map
       const map = L.map("map").setView([20, 10], 2);
-
+      const yearSlider = document.getElementById("hp_slider_year");
+      const currentYearText = document.getElementById("hp_txt_current_year");
       L.tileLayer(
         "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
         {
@@ -600,7 +662,7 @@
 
       function styleFeature(feature) {
         return {
-          fillColor: "#666", // mặc định xám
+          fillColor: "#666",
           weight: 1,
           opacity: 1,
           color: "#d8a24a",
@@ -609,13 +671,12 @@
       }
 
       let mortalityData = {};
-      let countryChart = null;
       let isForecastMode = false;
       let forecastYear = null;
+      let forecastIntervals = null;
 
       // Hàm xử lý click vào quốc gia
       function onEachFeature(feature, layer) {
-        // Bind tooltip rỗng trước
         layer.bindTooltip("", {
           sticky: true,
           direction: "top",
@@ -629,8 +690,6 @@
             const layer = e.target;
             const code = feature.id;
 
-            // ❌ KHÔNG ĐỔI MÀU
-            // Chỉ đổi viền
             layer.setStyle({
               weight: 3,
               color: "#f0c674",
@@ -665,104 +724,106 @@
         </div>
         <div class="hint">Click để xem chi tiết</div>
     </div>
-  `;
+    `;
 
             layer.setTooltipContent(tooltipHTML);
             layer.openTooltip();
           },
           mouseout: function (e) {
-          const layer = e.target;
-          const code = feature.id;
+            const layer = e.target;
+            const code = feature.id;
 
-          // trả lại viền bình thường
-          layer.setStyle({
-            weight: 1,
-            color: "#d8a24a"
-          });
+            layer.setStyle({
+              weight: 1,
+              color: "#d8a24a"
+            });
 
-          // nếu có dữ liệu thì trả lại màu đúng
-          if (mortalityData[code] !== undefined && mortalityData[code] > 0) {
-            layer.setStyle({
-              fillColor: getColor(mortalityData[code]),
-              fillOpacity: 0.8
-            });
-          } else {
-            layer.setStyle({
-              fillColor: "#666",
-              fillOpacity: 0.4
-            });
+            if (mortalityData[code] !== undefined && mortalityData[code] > 0) {
+              layer.setStyle({
+                fillColor: getColor(mortalityData[code]),
+                fillOpacity: 0.8
+              });
+            } else {
+              layer.setStyle({
+                fillColor: "#666",
+                fillOpacity: 0.4
+              });
+            }
+          },
+
+          click: function (e) {
+            const countryName = feature.properties.name;
+            const countryCode = feature.id;
+
+            loadCountryData(countryName, countryCode);
           }
-        },
-
-        click: function (e) {
-          const countryName = feature.properties.name;
-          const countryCode = feature.id;
-
-          loadCountryData(countryName, countryCode);
-        }
         });
       }
 
       // Load GeoJSON
       fetch(geoJsonUrl)
-      .then((response) => response.json())
-      .then((data) => {
-        geoLayer = L.geoJSON(data, {
-          style: styleFeature,
-          onEachFeature: onEachFeature,
-        }).addTo(map);
+        .then((response) => response.json())
+        .then((data) => {
+          geoLayer = L.geoJSON(data, {
+            style: styleFeature,
+            onEachFeature: onEachFeature,
+          }).addTo(map);
 
-        const forecastData = localStorage.getItem("forecastData");
-        const forecastYears = localStorage.getItem("forecastYears");
+          const forecastDataRaw = localStorage.getItem("forecastData");
 
-        if (forecastData && forecastYears) {
-          mortalityData = JSON.parse(forecastData);
+          if (forecastDataRaw) {
+            const parsed = JSON.parse(forecastDataRaw);
 
-          isForecastMode = true;
+            mortalityData = parsed.values || {};
+            forecastIntervals = parsed.intervals || {};
+            forecastYear = parsed.year || null;
+            isForecastMode = true;
 
-          const currentYear = parseInt(yearSlider.max);
-          forecastYear = currentYear + parseInt(forecastYears);
-
-          geoLayer.eachLayer(layer => {
-            const code = layer.feature.id;
-            if (mortalityData[code]) {
-              layer.setStyle({
-                fillColor: getColor(mortalityData[code]),
-                fillOpacity: 0.8
-              });
-            }
-          });
-
-          document.querySelector("#hp_txt_mode_indicator span").textContent =
-            "Chế độ dự báo";
-          document
-          .getElementById("hp_btn_reset_forecast")
-          .classList.remove("hidden");
-
-          document
-          .getElementById("hp_btn_reset_forecast")
-          .addEventListener("click", () => {
-
-            isForecastMode = false;
-            forecastYear = null;
-
-            updateMap(yearSlider.value);
+            geoLayer.eachLayer((layer) => {
+              const code = layer.feature.id;
+              if (mortalityData[code] !== undefined && mortalityData[code] !== null) {
+                layer.setStyle({
+                  fillColor: getColor(mortalityData[code]),
+                  fillOpacity: 0.8
+                });
+              } else {
+                layer.setStyle({
+                  fillColor: "#666",
+                  fillOpacity: 0.4
+                });
+              }
+            });
 
             document.querySelector("#hp_txt_mode_indicator span").textContent =
-              "Chế độ lịch sử";
+              "Chế độ dự báo";
+            document
+              .getElementById("hp_btn_reset_forecast")
+              .classList.remove("hidden");
 
             document
               .getElementById("hp_btn_reset_forecast")
-              .classList.add("hidden");
-          });
-      localStorage.removeItem("forecastData");
-          localStorage.removeItem("forecastYears");
+              .addEventListener("click", () => {
+                isForecastMode = false;
+                forecastYear = null;
+                forecastIntervals = null;
 
-        } else {
-          updateMap(yearSlider.value);
-        }
-      })
-      .catch((err) => console.error("Lỗi tải GeoJSON:", err));
+                updateMap(yearSlider.value);
+
+                document.querySelector("#hp_txt_mode_indicator span").textContent =
+                  "Chế độ lịch sử";
+
+                document
+                  .getElementById("hp_btn_reset_forecast")
+                  .classList.add("hidden");
+              });
+
+            localStorage.removeItem("forecastData");
+            localStorage.removeItem("forecastYears");
+          } else {
+            updateMap(yearSlider.value);
+          }
+        })
+        .catch((err) => console.error("Lỗi tải GeoJSON:", err));
 
       function updateMap(year) {
         fetch(`/api/mortality-by-year/${year}`)
@@ -779,7 +840,6 @@
             if (geoLayer) {
               geoLayer.eachLayer((layer) => {
                 const code = layer.feature.id;
-                // Nếu có dữ liệu và tỷ lệ > 0 thì tô màu theo thang, ngược lại xám
                 if (
                   code &&
                   mortalityData[code] !== undefined &&
@@ -799,9 +859,6 @@
           .catch((err) => console.error("Lỗi lấy dữ liệu tử vong:", err));
       }
 
-      const yearSlider = document.getElementById("hp_slider_year");
-      const currentYearText = document.getElementById("hp_txt_current_year");
-
       yearSlider.addEventListener("input", (e) => {
         const year = e.target.value;
         currentYearText.textContent = year;
@@ -810,7 +867,15 @@
 
       // ===== XỬ LÝ PANEL CHI TIẾT QUỐC GIA =====
       const panel = document.getElementById("cdp_panel");
-      const closePanelBtn = document.getElementById("cdp_btn_close");
+      const viewHistory = document.getElementById("cdp_view_history");
+      const viewForecast = document.getElementById("cdp_view_forecast");
+
+      const closeHistory = document.getElementById("cdp_btn_close");
+      const closeForecast = document.getElementById("cdpF_btn_close");
+
+      let selectedForecastModel = "Prophet";
+      let lastOpenedCountry = { name: null, code: null };
+      let panelChart = null;
 
       function openPanel() {
         panel.classList.add("translate-x-0");
@@ -822,132 +887,239 @@
         panel.classList.add("translate-x-full");
       }
 
-      closePanelBtn.addEventListener("click", closePanel);
+      closeHistory?.addEventListener("click", closePanel);
+      closeForecast?.addEventListener("click", closePanel);
+
+      function setPanelView(forecastMode) {
+        if (forecastMode) {
+          viewHistory.classList.add("hidden");
+          viewForecast.classList.remove("hidden");
+        } else {
+          viewForecast.classList.add("hidden");
+          viewHistory.classList.remove("hidden");
+        }
+      }
 
       function formatNumber(num) {
-        return num ? num.toFixed(2) : "0.00";
+        return typeof num === "number" && !Number.isNaN(num) ? num.toFixed(2) : "0.00";
+      }
+
+      function getForecastValueForCountry(countryCode) {
+        if (!countryCode || !mortalityData) return null;
+        const v = mortalityData[countryCode];
+        return typeof v === "number" ? v : null;
+      }
+
+      function getForecastIntervalForCountry(countryCode) {
+        if (!forecastIntervals || !countryCode) return null;
+
+        const ci = forecastIntervals[countryCode];
+        if (
+          ci &&
+          typeof ci.lo === "number" &&
+          !Number.isNaN(ci.lo) &&
+          typeof ci.hi === "number" &&
+          !Number.isNaN(ci.hi)
+        ) {
+          return ci;
+        }
+
+        return null;
+      }
+
+      function setActiveModel(model) {
+        selectedForecastModel = model;
+
+        const btnP = document.getElementById("cdpF_btn_model_prophet");
+        if (!btnP) return;
+
+        btnP.classList.add("bg-gold", "text-slate-900");
+        btnP.classList.remove("text-gold", "hover:bg-gold/10");
+      }
+
+      document.getElementById("cdpF_btn_toggle_model")?.addEventListener("click", (e) => {
+        const btn = e.target.closest("button[data-model]");
+        if (!btn) return;
+        const model = btn.getAttribute("data-model");
+        if (!model) return;
+
+        setActiveModel(model);
+        if (lastOpenedCountry.name && lastOpenedCountry.code) {
+          loadCountryData(lastOpenedCountry.name, lastOpenedCountry.code);
+        }
+      });
+
+      setActiveModel("Prophet");
+
+      function renderStats(prefix, years, rates) {
+        const valid = rates.filter((v) => typeof v === "number" && !Number.isNaN(v));
+        const avg = valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : 0;
+        const max = valid.length ? Math.max(...valid) : 0;
+        const min = valid.length ? Math.min(...valid) : 0;
+
+        document.getElementById(prefix + "stats_avg").textContent = formatNumber(avg);
+        document.getElementById(prefix + "stats_max").textContent = formatNumber(max);
+        document.getElementById(prefix + "stats_min").textContent = formatNumber(min);
+        document.getElementById(prefix + "stats_years").textContent = String(years.length);
+      }
+
+      function renderForecastBox(prefix, countryCode) {
+        const section = document.getElementById(prefix + "forecast_section");
+        const yearEl = document.getElementById(prefix + "forecast_year");
+        const valEl = document.getElementById(prefix + "txt_forecast_value");
+        const ciEl = document.getElementById(prefix + "txt_confidence_interval");
+
+        const v = getForecastValueForCountry(countryCode);
+
+        if (isForecastMode && v !== null && forecastYear !== null) {
+          section.classList.remove("hidden");
+          yearEl.textContent = String(forecastYear);
+          valEl.innerHTML = `${formatNumber(v)} <span class="text-sm font-normal text-slate-400">/ 100k</span>`;
+
+          const ci = getForecastIntervalForCountry(countryCode);
+
+          if (
+            ci &&
+            typeof ci.lo === "number" &&
+            !Number.isNaN(ci.lo) &&
+            typeof ci.hi === "number" &&
+            !Number.isNaN(ci.hi)
+          ) {
+            ciEl.textContent = `[${formatNumber(ci.lo)}, ${formatNumber(ci.hi)}]`;
+          } else {
+            ciEl.textContent = "[N/A, N/A]";
+          }
+        } else {
+          section.classList.add("hidden");
+        }
+      }
+
+      function renderChart(canvasId, yearsHist, ratesHist, countryCode) {
+        const ctx = document.getElementById(canvasId).getContext("2d");
+        const lastYear = Math.max(...yearsHist);
+
+        const v = isForecastMode ? getForecastValueForCountry(countryCode) : null;
+
+        const yearsFc = [];
+        const ratesFc = [];
+        if (isForecastMode && v !== null && forecastYear !== null) {
+          for (let y = lastYear + 1; y <= forecastYear; y++) {
+            yearsFc.push(y);
+            ratesFc.push(v);
+          }
+        }
+
+        const labels = [...yearsHist, ...yearsFc];
+        const histDataset = [...ratesHist, ...Array(yearsFc.length).fill(null)];
+        const fcDataset = [
+          ...Array(yearsHist.length - 1).fill(null),
+          ratesHist[ratesHist.length - 1],
+          ...ratesFc,
+        ];
+
+        if (panelChart) panelChart.destroy();
+
+        panelChart = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels,
+            datasets: [
+              { label: "Lịch sử", data: histDataset, borderColor: "#d8a24a", borderWidth: 3, tension: 0.2, pointRadius: 3 },
+              { label: isForecastMode ? `Dự báo (${selectedForecastModel})` : "Dự báo", data: fcDataset, borderColor: "#fb923c", borderDash: [6, 6], borderWidth: 3, tension: 0.2, pointRadius: 0 },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: "#efe6d8" } } },
+            scales: { y: { beginAtZero: true, ticks: { color: "#efe6d8" } }, x: { ticks: { color: "#efe6d8" } } },
+          },
+        });
       }
 
       function loadCountryData(countryName, countryCode) {
-      fetch(`/api/historical/${encodeURIComponent(countryName)}`)
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.error) {
-            console.error("Lỗi:", data.error);
-            return;
-          }
+        lastOpenedCountry = { name: countryName, code: countryCode };
+        setPanelView(isForecastMode);
 
-          document.getElementById("cdp_txt_country_name").textContent =
-            countryName;
-          document.getElementById("cdp_txt_region").textContent =
-            data[0]?.Region || "Không xác định";
+        fetch(`/api/historical-by-code/${encodeURIComponent(countryCode)}`)
+          .then((r) => r.json())
+          .then((data) => {
+            if (data.error) return;
 
-          const historicalYears = data.map((item) => item.Year);
-          const historicalRates = data.map((item) => item.Mortality_Rate);
+            const yearsHist = data.map((x) => x.Year);
+            const ratesHist = data.map((x) => x.Mortality_Rate);
 
-          let forecastYearsArray = [];
-          let forecastRatesArray = [];
-
-          if (isForecastMode && mortalityData[countryCode] !== undefined) {
-            const lastHistoricalYear = Math.max(...historicalYears);
-
-            forecastYearsArray = [];
-            forecastRatesArray = [];
-
-            for (let y = lastHistoricalYear + 1; y <= forecastYear; y++) {
-              forecastYearsArray.push(y);
-              forecastRatesArray.push(mortalityData[countryCode]);
+            if (!isForecastMode) {
+              document.getElementById("cdp_txt_country_name").textContent = countryName;
+              document.getElementById("cdp_txt_region").textContent = data[0]?.Region || "Không xác định";
+              renderStats("cdp_", yearsHist, ratesHist);
+              renderForecastBox("cdp_", countryCode);
+              renderChart("cdp_chart_time_series", yearsHist, ratesHist, countryCode);
+            } else {
+              document.getElementById("cdpF_txt_country_name").textContent = countryName;
+              document.getElementById("cdpF_txt_region").textContent = data[0]?.Region || "Không xác định";
+              renderStats("cdpF_", yearsHist, ratesHist);
+              renderForecastBox("cdpF_", countryCode);
+              renderChart("cdpF_chart_time_series", yearsHist, ratesHist, countryCode);
             }
-          }
 
-          const allYears = [...historicalYears, ...forecastYearsArray];
-
-          const historicalDataset = [
-            ...historicalRates,
-            ...Array(forecastYearsArray.length).fill(null),
-          ];
-
-          const forecastDataset = [
-            ...Array(historicalYears.length - 1).fill(null),
-            historicalRates[historicalRates.length - 1],
-            ...forecastRatesArray,
-          ];
-
-          if (countryChart) countryChart.destroy();
-
-          const ctx = document
-            .getElementById("cdp_chart_time_series")
-            .getContext("2d");
-
-          countryChart = new Chart(ctx, {
-            type: "line",
-            data: {
-              labels: allYears,
-              datasets: [
-                {
-                  label: "Lịch sử",
-                  data: historicalDataset,
-                  borderColor: "#d8a24a",
-                  borderWidth: 3,
-                  tension: 0.2,
-                  pointRadius: 3,
-                },
-                {
-                  label: "Dự báo",
-                  data: forecastDataset,
-                  borderColor: "#fb923c",
-                  borderDash: [6, 6],
-                  borderWidth: 3,
-                  tension: 0.2,
-                  pointRadius: 0,
-                },
-              ],
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                legend: {
-                  labels: { color: "#efe6d8" },
-                },
-              },
-              scales: {
-                y: {
-                  beginAtZero: true,
-                  ticks: { color: "#efe6d8" },
-                  grid: { color: "rgba(216,162,74,0.2)" },
-                },
-                x: {
-                  ticks: { color: "#efe6d8" },
-                  grid: { display: false },
-                },
-              },
-            },
-          });
-
-          openPanel();
-        })
-        .catch((err) =>
-          console.error("Lỗi tải dữ liệu quốc gia:", err)
-        );
-    }
-
-      function openCountryPanel(countryName, countryCode) {
-        loadCountryData(countryName, countryCode);
+            openPanel();
+          })
+          .catch(console.error);
       }
-
-      // Xử lý nút dự báo (giữ nguyên)
-      const forecastBtn = document.getElementById("hp_btn_forecast");
-      forecastBtn.addEventListener("click", () => {
-      window.location.href = "/forecast-modal";
-        });
 
       // Xuất dữ liệu (mock)
       document
-        .getElementById("cdp_btn_export")
-        .addEventListener("click", () => {
-          alert("Đang chuẩn bị tệp dữ liệu CSV và biểu đồ PNG...");
-        });
+          .getElementById("cdp_btn_export")
+          .addEventListener("click", exportHistoryData);
+
+        document
+          .getElementById("cdpF_btn_export")
+          .addEventListener("click", exportForecastData);
+      function triggerDownload(url) {
+          const a = document.createElement("a");
+          a.href = url;
+          a.style.display = "none";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        }
+
+        function exportHistoryData() {
+          const params = new URLSearchParams({
+            type: "history",
+          });
+
+          if (lastOpenedCountry.code) {
+            params.set("country_code", lastOpenedCountry.code);
+          }
+
+          triggerDownload(`/api/export?${params.toString()}`);
+        }
+
+        function exportForecastData() {
+          const params = new URLSearchParams({
+            type: "forecast",
+          });
+
+          if (forecastYear !== null) {
+            params.set("year", forecastYear);
+          }
+
+          if (lastOpenedCountry.code) {
+            params.set("country_code", lastOpenedCountry.code);
+          }
+
+          triggerDownload(`/api/export?${params.toString()}`);
+        }
+
+      // ===== Forecast button (go to modal) =====
+      const forecastBtn = document.getElementById("hp_btn_forecast");
+      forecastBtn?.addEventListener("click", () => {
+        window.location.href = "/forecast-modal";
+      });
+
+
     </script>
     <!-- END: Scripts -->
   </body>

@@ -397,15 +397,6 @@
         0.3,
         0.5
       ],
-      "n_changepoints": [
-        15,
-        20,
-        25
-      ],
-      "changepoint_range": [
-        0.8,
-        0.9
-      ],
       "holidays_prior_scale": [
         10.0,
         15.0
