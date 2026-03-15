@@ -134,15 +134,15 @@ Mortality_Rate_Forecasting/
 ## 4. Chức năng chính
 
 ### 1. Hiển thị Bản đồ Dữ liệu Theo Quốc gia
-<img src="docs/images/giao_dien_trang_chu.png"/>
+<img src="docs/img/giao-dien-trang-chu.png"/>
 
 ### 3. Xem Chi tiết Quốc gia
 
-<img src="docs/images/chi_tiet_quoc_gia.png"/>
+<img src="docs/img/chi-tiet-quoc-gia.png"/>
 
 ### 4. Hiển thị Dự báo
 
-<img src="docs/images/du_bao.png"/>
+<img src="docs/img/du-bao.png"/>
 
 ### 5. Xuất Dữ liệu
 
