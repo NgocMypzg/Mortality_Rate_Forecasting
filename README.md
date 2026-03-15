@@ -136,15 +136,15 @@ Mortality_Rate_Forecasting/
 ### 1. Hiển thị Bản đồ Dữ liệu Theo Quốc gia
 <img src="docs/img/giao-dien-trang-chu.png"/>
 
-### 3. Xem Chi tiết Quốc gia
+### 2. Xem Chi tiết Quốc gia
 
 <img src="docs/img/chi-tiet-quoc-gia.png"/>
 
-### 4. Hiển thị Dự báo
+### 3. Hiển thị Dự báo
 
 <img src="docs/img/du-bao.png"/>
 
-### 5. Xuất Dữ liệu
+### 4. Xuất Dữ liệu
 
 - API `/api/export` hỗ trợ xuất:
   - **history**: Dữ liệu lịch sử theo quốc gia hoặc toàn cầu
@@ -277,7 +277,7 @@ Output:
    - Quốc gia có <13 năm dữ liệu sẽ không có dự báo riêng (NULL values)
 
 3. **Khoảng Tin cậy**:
-   - Khoảng 95% dựa trên phân phối Prophet
+   - Khoảng 90% dựa trên phân phối Prophet
    - Không đảm bảo 100% nằm trong khoảng (do bất định mô hình)
 
 4. **Tính Chính xác**:
