@@ -309,7 +309,6 @@ Chúng tôi hoan nghênh các đóng góp từ cộng đồng. Để đóng góp
 
 - **Tên dự án**: Mortality Rate Forecasting System (Hệ thống Dự báo Tỷ lệ Tử vong)
 - **Mục tiêu**: Hỗ trợ SDG 11.5 - Giảm thiệt hại do thảm họa
-- **Trạng thái**: Đang phát triển
 
 ### Liên hệ
 
