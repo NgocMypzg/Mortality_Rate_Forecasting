@@ -153,50 +153,8 @@ Mortality_Rate_Forecasting/
 
 ---
 
-## 5. Quy trình hoạt động
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                      QUY TRÌNH HỆ THỐNG                         │
-└─────────────────────────────────────────────────────────────────┘
-
-PHASE 1: CHUẨN BỊ DỮ LIỆU
-├─ Nạp CSV từ sources
-├─ Xử lý missing values, chuẩn hóa năm
-└─ Tổng hợp theo 3 cấp độ: Global, Region, Country
-
-PHASE 2: HUẤN LUYỆN MÔ HÌNH (offline, chạy 1 lần)
-├─ Cấp độ Global: 1 mô hình Prophet trên toàn bộ dữ liệu
-├─ Cấp độ Region: 1 mô hình Prophet cho mỗi 7 khu vực
-└─ Cấp độ Country:
-   ├─ Nếu ≥21 năm dữ liệu → train mô hình country
-   ├─ Nếu 13-20 năm → fallback sang region model
-   └─ Nếu <13 năm → không dự báo (NULL)
-
-PHASE 3: TẠO DỮ LIỆU DỰ BÁO
-├─ Load các mô hình .pkl từ saved/
-├─ Chạy dự báo cho 6 năm tương lai (2025-2030)
-├─ Lưu kết quả vào forecast_data.csv
-└─ Lưu metadata.json (ghi lại model sources)
-
-PHASE 4: KHỞI CHẠY WEB APPLICATION
-├─ Flask nạp data CSV vào bộ nhớ
-├─ Serve static files (CSS, JS) từ /static
-├─ Render HTML templates từ /templates
-└─ API ready to serve
-
-PHASE 5: NGƯỜI DÙNG TƯƠNG TÁC
-├─ User truy cập http://localhost:5000/
-├─ Frontend gọi API:
-│  ├─ GET /api/years → Danh sách năm có dữ liệu
-│  ├─ GET /api/mortality-by-year/<year> → Dữ liệu năm
-│  ├─ POST /api/forecast → Dự báo quốc gia
-│  └─ GET /api/export → Download CSV
-└─ Frontend render bản đồ, biểu đồ, panel
-```
----
-
-## 6. Hướng dẫn cài đặt
+## 5. Hướng dẫn cài đặt
 
 ### Yêu cầu Môi trường
 
@@ -256,7 +214,7 @@ Output:
 
 ---
 
-## 7. Ghi chú
+## 6. Ghi chú
 
 ### Nguồn Dữ liệu
 
@@ -284,7 +242,7 @@ Output:
    - MAE, MAE, RMSE, Coverage
    - Expanding window evaluation được sử dụng
 
-## 8. Đóng Góp
+## 7. Đóng Góp
 
 Chúng tôi hoan nghênh các đóng góp từ cộng đồng. Để đóng góp:
 
@@ -314,12 +272,10 @@ Chúng tôi hoan nghênh các đóng góp từ cộng đồng. Để đóng góp
 
 - Leader: Phạm Ngọc Mỹ
 - Email: ngocmypzg@gmail.com
-- Đơn vị: Trường Đại học Kinh tế - Luật, Đại học Quốc gia TP.HCM
 
 ### Hỗ Trợ & Báo Cáo Lỗi
 
 - **GitHub Issues**: Tạo issue để báo cáo lỗi hoặc đề xuất tính năng
-- **Email**: ngocmypzg@gmail.com
 - **Documentation**: Xem thêm trong folder `/docs`
 
 ### Giấy Phép
